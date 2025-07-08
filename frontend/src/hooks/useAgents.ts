@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { Agent } from "../types/agent";
 
 export function useAgents() {
@@ -6,7 +6,8 @@ export function useAgents() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchAgents = useCallback(() => {
+    setLoading(true);
     fetch("http://localhost:3500/api/agents")
       .then((res) => res.json())
       .then((data) => {
@@ -19,5 +20,9 @@ export function useAgents() {
       });
   }, []);
 
-  return { agents, loading, error };
+  useEffect(() => {
+    fetchAgents();
+  }, [fetchAgents]);
+
+  return { agents, loading, error, setAgents, reloadAgents: fetchAgents };
 }

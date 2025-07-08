@@ -11,7 +11,7 @@ export function useAgentMemory() {
     setError(null);
     try {
       const response = await fetch(
-        `http://localhost:3000/api/memory/${agentId}`
+        `http://localhost:3500/api/memory/${agentId}`
       );
       const data: Memory[] = await response.json();
       setSelectedMemory((prev) => ({ ...prev, [agentId]: data }));

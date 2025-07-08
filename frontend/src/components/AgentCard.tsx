@@ -1,6 +1,7 @@
 import type { Agent, Memory } from "../types/agent";
 import { AgentMemory } from "./AgentMemory";
 import { AgentTalkDropdown } from "./AgentTalkDropdown";
+import { AgentMoveDropdown } from "./AgentMoveDropdown";
 
 interface AgentCardProps {
   agent: Agent;
@@ -8,6 +9,7 @@ interface AgentCardProps {
   memories: Memory[];
   onViewMemory: () => void;
   onTalk: (toId: string, content: string) => void;
+  onMove: (newLocation: string) => void;
 }
 
 export function AgentCard({
@@ -16,6 +18,7 @@ export function AgentCard({
   memories,
   onViewMemory,
   onTalk,
+  onMove,
 }: AgentCardProps) {
   return (
     <div className="bg-gray-800 p-6 rounded-xl shadow-md">
@@ -23,6 +26,9 @@ export function AgentCard({
       <p className="text-sm text-gray-400 italic">{agent.role}</p>
       <p className="mt-2">{agent.backstory}</p>
       <p className="text-sm text-purple-300 mt-1">Location: {agent.location}</p>
+
+      {/* Move Dropdown */}
+      <AgentMoveDropdown agentId={agent.id} onMove={onMove} />
 
       {/* View Memory Button */}
       <button
