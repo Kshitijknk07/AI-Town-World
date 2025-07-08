@@ -4,18 +4,26 @@ const agents = require("../agents/agents");
 
 // We are Getting the Agent Memory
 router.get("/:id", (req, res) => {
-  const agent = agents.find((a) => a.id === req.params.id);
+  console.log("Agents:", agents);
+  console.log("Requested ID:", req.params.id);
+  const agent = agents.find(
+    (a) => a.id.toLowerCase() === req.params.id.toLowerCase()
+  );
   if (!agent) return res.status(404).json({ error: "Agent not found" });
   res.json(agent.memory);
 });
 
 // We are POST a new memory to agent
 router.post("/:id", (req, res) => {
-  const agent = agents.find((a) => a.id === req.params.id);
+  console.log("Agents:", agents);
+  console.log("Requested ID:", req.params.id);
+  const agent = agents.find(
+    (a) => a.id.toLowerCase() === req.params.id.toLowerCase()
+  );
   if (!agent) return res.status(404).json({ error: "Agent not found" });
 
   const memory = {
-    timestamp: new Date().toISOString,
+    timestamp: new Date().toISOString(),
     type: req.body.type || "event",
     content: req.body.content || "No Content",
   };
