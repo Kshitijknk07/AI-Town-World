@@ -114,16 +114,31 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = ({
       <SheetContent className="w-[400px] sm:w-[540px] overflow-hidden">
         <SheetHeader className="space-y-3">
           <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
-              style={{ backgroundColor: agent.color }}
-            >
-              {agent.name.charAt(0)}
+            <div className="relative">
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                style={{ backgroundColor: agent.color }}
+              >
+                {agent.name.charAt(0)}
+              </div>
+              {/* Status indicator */}
+              <div
+                className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+                  agent.status === "idle"
+                    ? "bg-green-400"
+                    : agent.status === "moving"
+                    ? "bg-blue-400"
+                    : agent.status === "talking"
+                    ? "bg-yellow-400"
+                    : "bg-purple-400"
+                }`}
+              />
             </div>
             <div>
               <SheetTitle className="text-xl">{agent.name}</SheetTitle>
               <SheetDescription className="text-base">
-                {agent.role}
+                {agent.role} •{" "}
+                <span className="capitalize">{agent.status}</span>
               </SheetDescription>
             </div>
           </div>

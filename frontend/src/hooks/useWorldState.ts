@@ -50,8 +50,6 @@ export const useWorldState = () => {
         throw new Error(`Failed to fetch agents: ${res.status}`);
       }
       const backendAgents = await res.json();
-      console.log("Fetched agents from backend:", backendAgents);
-
       // Transform backend agents to match frontend interface
       const agents: Agent[] = backendAgents.map(
         (backendAgent: any, index: number) => ({
@@ -64,32 +62,30 @@ export const useWorldState = () => {
           status: backendAgent.status || "idle",
         })
       );
-
-      console.log("Transformed agents:", agents);
-
       // Ensure agents have valid data
       const validAgents = agents.filter(
         (agent) => agent && agent.id && agent.name && agent.currentLocation
       );
-
-      console.log("Valid agents:", validAgents);
-
       // Fetch zones and build complete state
       const zones = await fetchZones();
       const zonesWithAgents = buildZonesWithAgents(zones, validAgents);
-
       setWorldState((prev) => ({
         ...prev,
         agents: validAgents,
         zones: zonesWithAgents,
+        // Preserve selectedAgentId and isMemoryPanelOpen
+        selectedAgentId: prev.selectedAgentId,
+        isMemoryPanelOpen: prev.isMemoryPanelOpen,
       }));
     } catch (error) {
       console.error("Failed to fetch agents:", error);
-      // Set empty state on error
+      // Set empty state on error, but preserve selection
       setWorldState((prev) => ({
         ...prev,
         agents: [],
         zones: [],
+        selectedAgentId: prev.selectedAgentId,
+        isMemoryPanelOpen: prev.isMemoryPanelOpen,
       }));
     } finally {
       setIsLoading(false);
@@ -120,11 +116,23 @@ export const useWorldState = () => {
         });
         if (!res.ok) throw new Error("Failed to move agent");
         const data = await res.json();
-        // Update agents and zones from backend response
-        await fetchAgents();
-        setTimeout(() => {
+
+        // Immediately update the agent status to "moving"
+        setWorldState((prev) => ({
+          ...prev,
+          agents: prev.agents.map((agent) =>
+            agent.id === agentId
+              ? { ...agent, status: "moving" as const }
+              : agent
+          ),
+        }));
+
+        // Refresh agents after a short delay to get updated status
+        setTimeout(async () => {
+          await fetchAgents();
           setWorldState((prev) => ({ ...prev, isMoving: false }));
-        }, 500); // mimic animation delay
+        }, 1000); // Match backend timeout
+
         return data;
       } catch (error) {
         console.error("Failed to move agent:", error);
@@ -136,6 +144,18 @@ export const useWorldState = () => {
     },
     [fetchAgents]
   );
+
+  // Add real-time status updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Only refresh if we have agents and not currently loading
+      if (worldState.agents.length > 0 && !isLoading) {
+        fetchAgents();
+      }
+    }, 3000); // Refresh every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [worldState.agents.length, isLoading, fetchAgents]);
 
   const fetchAgentMemories = useCallback(async (agentId: string) => {
     setIsLoading(true);

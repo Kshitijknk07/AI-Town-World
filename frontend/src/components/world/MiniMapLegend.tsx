@@ -60,6 +60,12 @@ export const MiniMapLegend: React.FC<MiniMapLegendProps> = ({
     onAgentSelect(agents[0].id);
   };
 
+  const statusColors = {
+    idle: "bg-gray-200",
+    moving: "bg-blue-200",
+    talking: "bg-yellow-200",
+  };
+
   return (
     <div className="w-full lg:w-80 space-y-4">
       {/* Quick Actions */}
@@ -131,25 +137,61 @@ export const MiniMapLegend: React.FC<MiniMapLegendProps> = ({
           <CardTitle className="text-lg">Active Agents</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          {/* Status Summary */}
+          <div className="flex gap-2 mb-3">
+            {Object.entries({
+              idle: agents.filter((a) => a.status === "idle").length,
+              moving: agents.filter((a) => a.status === "moving").length,
+              talking: agents.filter((a) => a.status === "talking").length,
+            }).map(([status, count]) => (
+              <div key={status} className="flex items-center gap-1">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    statusColors[status as keyof typeof statusColors]
+                  }`}
+                />
+                <span className="text-xs capitalize">
+                  {status}: {count}
+                </span>
+              </div>
+            ))}
+          </div>
+
           {agents.map((agent) => (
             <div
               key={agent.id}
               className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
               onClick={() => onAgentSelect?.(agent.id)}
             >
-              <div
-                className="w-4 h-4 rounded-full border-2"
-                style={{
-                  backgroundColor: agent.color,
-                  borderColor: agent.color,
-                }}
-              />
+              <div className="relative">
+                <div
+                  className="w-4 h-4 rounded-full border-2"
+                  style={{
+                    backgroundColor: agent.color,
+                    borderColor: agent.color,
+                  }}
+                />
+                <div
+                  className={`absolute -bottom-1 -right-1 w-2 h-2 rounded-full border border-white ${
+                    statusColors[agent.status]
+                  }`}
+                />
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium truncate">
                     {agent.name}
                   </span>
-                  <Badge variant="outline" className="text-xs capitalize">
+                  <Badge
+                    variant="outline"
+                    className={`text-xs capitalize ${
+                      agent.status === "moving"
+                        ? "border-blue-400 text-blue-600"
+                        : agent.status === "talking"
+                        ? "border-yellow-400 text-yellow-600"
+                        : "border-green-400 text-green-600"
+                    }`}
+                  >
                     {agent.status}
                   </Badge>
                 </div>

@@ -30,6 +30,13 @@ const statusIndicators = {
   thinking: "border-purple-400 animate-pulse",
 };
 
+const statusColors = {
+  idle: "bg-green-400",
+  moving: "bg-blue-400",
+  talking: "bg-yellow-400",
+  thinking: "bg-purple-400",
+};
+
 export const AgentAvatar: React.FC<AgentAvatarProps> = ({
   agent,
   isSelected = false,
@@ -45,27 +52,37 @@ export const AgentAvatar: React.FC<AgentAvatarProps> = ({
   };
 
   const avatarElement = (
-    <Avatar
-      className={cn(
-        sizeClasses[size],
-        "cursor-pointer transition-all duration-200 border-2",
-        statusIndicators[agent.status],
-        isSelected && "ring-4 ring-blue-200 ring-offset-2",
-        "hover:scale-110 hover:shadow-lg"
-      )}
-      onClick={onClick}
-      draggable={draggable}
-      onDragStart={handleDragStart}
-      style={{ borderColor: agent.color }}
-    >
-      <AvatarImage src={agent.avatar} alt={agent.name} />
-      <AvatarFallback
-        className="text-white font-bold"
-        style={{ backgroundColor: agent.color }}
+    <div className="relative">
+      <Avatar
+        className={cn(
+          sizeClasses[size],
+          "cursor-pointer transition-all duration-200 border-2",
+          statusIndicators[agent.status],
+          isSelected && "ring-4 ring-blue-200 ring-offset-2",
+          "hover:scale-110 hover:shadow-lg"
+        )}
+        onClick={onClick}
+        draggable={draggable}
+        onDragStart={handleDragStart}
+        style={{ borderColor: agent.color }}
       >
-        {agent.name.charAt(0)}
-      </AvatarFallback>
-    </Avatar>
+        <AvatarImage src={agent.avatar} alt={agent.name} />
+        <AvatarFallback
+          className="text-white font-bold"
+          style={{ backgroundColor: agent.color }}
+        >
+          {agent.name.charAt(0)}
+        </AvatarFallback>
+      </Avatar>
+
+      {/* Status indicator dot */}
+      <div
+        className={cn(
+          "absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white",
+          statusColors[agent.status]
+        )}
+      />
+    </div>
   );
 
   if (showTooltip) {
