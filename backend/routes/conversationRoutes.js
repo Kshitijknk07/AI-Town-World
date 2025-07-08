@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const agents = require("../agents/agents");
 
-// A Simple Conversation Between Two Agents
 router.post("/", (req, res) => {
   const { fromId, toId, content } = req.body;
 
@@ -13,7 +12,6 @@ router.post("/", (req, res) => {
     return res.status(404).json({ error: "One or Both agents not found" });
   }
 
-  // Set both agents to talking status
   from.status = "talking";
   to.status = "talking";
 
@@ -35,7 +33,6 @@ router.post("/", (req, res) => {
   from.memory.push(message);
   to.memory.push(reply);
 
-  // Reset status to idle after conversation
   setTimeout(() => {
     from.status = "idle";
     to.status = "idle";

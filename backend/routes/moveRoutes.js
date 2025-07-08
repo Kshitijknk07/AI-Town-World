@@ -3,7 +3,6 @@ const router = express.Router();
 const agents = require("../agents/agents");
 const locations = require("../constants/locations");
 
-// Post request /api/move/:id
 router.post("/:id", (req, res) => {
   const agent = agents.find((a) => a.id === req.params.id);
   const { location } = req.body;
@@ -13,11 +12,9 @@ router.post("/:id", (req, res) => {
     return res.status(400).json({ error: "Invalid Location" });
   }
 
-  // Update agent location and status
   agent.location = location;
   agent.status = "moving";
 
-  // Add movement memory
   agent.memory.push({
     timestamp: new Date().toISOString(),
     type: "movement",
@@ -25,7 +22,6 @@ router.post("/:id", (req, res) => {
     location: location,
   });
 
-  // Reset status to idle after a short delay (simulate movement)
   setTimeout(() => {
     agent.status = "idle";
   }, 1000);

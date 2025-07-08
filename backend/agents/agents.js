@@ -1,5 +1,3 @@
-// Creating Agent Definitions
-
 const agents = [
   {
     id: "luna",
@@ -7,7 +5,7 @@ const agents = [
     role: "Artist",
     personality: "Creative, Expressive, Dreamy",
     backstory: "Luna paints murals inspired by agent dreams",
-    location: "cafe",
+    location: "residential-1",
     status: "idle",
     memory: [],
   },
@@ -18,7 +16,7 @@ const agents = [
     role: "Engineer",
     personality: "Curious, Logical, Introverted",
     backstory: "Aiden moved to AI Town to build helpful Machines.",
-    location: "park",
+    location: "park-1",
     status: "idle",
     memory: [],
   },
@@ -29,7 +27,7 @@ const agents = [
     role: "Historian",
     personality: "Wise, observant, calm",
     backstory: "Nova archives the stories of every agent in town.",
-    location: "library",
+    location: "civic-1",
     status: "idle",
     memory: [],
   },

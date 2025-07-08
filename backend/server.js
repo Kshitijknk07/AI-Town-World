@@ -1,5 +1,3 @@
-// Main backend
-
 const express = require("express");
 const cors = require("cors");
 
@@ -20,7 +18,6 @@ application.use("/api/agents", agentRoutes);
 const memoryRoutes = require("./routes/memoryRoutes");
 application.use("/api/memory", memoryRoutes);
 
-// Add zones endpoint
 application.get("/api/zones", (req, res) => {
   const zones = [
     {

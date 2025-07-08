@@ -75,7 +75,7 @@ export const AgentAvatar: React.FC<AgentAvatarProps> = ({
         </AvatarFallback>
       </Avatar>
 
-      {/* Status indicator dot */}
+      {}
       <div
         className={cn(
           "absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white",

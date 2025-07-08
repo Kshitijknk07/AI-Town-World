@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Agent, Zone, Memory, WorldState } from "@/types/agent";
 
 export const useWorldState = () => {
@@ -15,7 +15,10 @@ export const useWorldState = () => {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Helper to build zones with agent assignments
+  const isUserInteracting = useRef(false);
+  const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastMemoryUpdate = useRef<number>(0);
+
   const buildZonesWithAgents = (zones: Zone[], agents: Agent[]): Zone[] => {
     return zones.map((zone) => ({
       ...zone,
@@ -25,7 +28,6 @@ export const useWorldState = () => {
     }));
   };
 
-  // Fetch zones from backend
   const fetchZones = useCallback(async () => {
     try {
       const res = await fetch("/api/zones");
@@ -41,71 +43,100 @@ export const useWorldState = () => {
     }
   }, []);
 
-  // Fetch agents from backend
-  const fetchAgents = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/agents");
-      if (!res.ok) {
-        throw new Error(`Failed to fetch agents: ${res.status}`);
+  const fetchAgents = useCallback(
+    async (preserveSelection = true) => {
+      if (isUserInteracting.current) {
+        return;
       }
-      const backendAgents = await res.json();
-      // Transform backend agents to match frontend interface
-      const agents: Agent[] = backendAgents.map(
-        (backendAgent: any, index: number) => ({
-          id: backendAgent.id,
-          name: backendAgent.name,
-          role: backendAgent.role,
-          backstory: backendAgent.backstory,
-          currentLocation: backendAgent.location, // Map 'location' to 'currentLocation'
-          color: `hsl(${index * 120}, 70%, 50%)`, // Generate colors for agents
-          status: backendAgent.status || "idle",
-        })
-      );
-      // Ensure agents have valid data
-      const validAgents = agents.filter(
-        (agent) => agent && agent.id && agent.name && agent.currentLocation
-      );
-      // Fetch zones and build complete state
-      const zones = await fetchZones();
-      const zonesWithAgents = buildZonesWithAgents(zones, validAgents);
-      setWorldState((prev) => ({
-        ...prev,
-        agents: validAgents,
-        zones: zonesWithAgents,
-        // Preserve selectedAgentId and isMemoryPanelOpen
-        selectedAgentId: prev.selectedAgentId,
-        isMemoryPanelOpen: prev.isMemoryPanelOpen,
-      }));
-    } catch (error) {
-      console.error("Failed to fetch agents:", error);
-      // Set empty state on error, but preserve selection
-      setWorldState((prev) => ({
-        ...prev,
-        agents: [],
-        zones: [],
-        selectedAgentId: prev.selectedAgentId,
-        isMemoryPanelOpen: prev.isMemoryPanelOpen,
-      }));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchZones]);
+
+      setIsLoading(true);
+      try {
+        const res = await fetch("/api/agents");
+        if (!res.ok) {
+          throw new Error(`Failed to fetch agents: ${res.status}`);
+        }
+        const backendAgents = await res.json();
+        const agents: Agent[] = backendAgents.map(
+          (backendAgent: any, index: number) => ({
+            id: backendAgent.id,
+            name: backendAgent.name,
+            role: backendAgent.role,
+            backstory: backendAgent.backstory,
+            currentLocation: backendAgent.location,
+            color: `hsl(${index * 120}, 70%, 50%)`,
+            status: backendAgent.status || "idle",
+          })
+        );
+        const validAgents = agents.filter(
+          (agent) => agent && agent.id && agent.name && agent.currentLocation
+        );
+        const zones = await fetchZones();
+        const zonesWithAgents = buildZonesWithAgents(zones, validAgents);
+
+        setWorldState((prev) => {
+          const agentsChanged =
+            JSON.stringify(prev.agents) !== JSON.stringify(validAgents);
+          const zonesChanged =
+            JSON.stringify(prev.zones) !== JSON.stringify(zonesWithAgents);
+
+          if (!agentsChanged && !zonesChanged) {
+            return prev;
+          }
+
+          return {
+            ...prev,
+            agents: validAgents,
+            zones: zonesWithAgents,
+            selectedAgentId: preserveSelection
+              ? prev.selectedAgentId
+              : prev.selectedAgentId,
+            isMemoryPanelOpen: preserveSelection
+              ? prev.isMemoryPanelOpen
+              : prev.isMemoryPanelOpen,
+          };
+        });
+      } catch (error) {
+        console.error("Failed to fetch agents:", error);
+        setWorldState((prev) => ({
+          ...prev,
+          agents: [],
+          zones: [],
+          selectedAgentId: preserveSelection
+            ? prev.selectedAgentId
+            : prev.selectedAgentId,
+          isMemoryPanelOpen: preserveSelection
+            ? prev.isMemoryPanelOpen
+            : prev.isMemoryPanelOpen,
+        }));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchZones]
+  );
 
   useEffect(() => {
     fetchAgents();
   }, [fetchAgents]);
 
   const selectAgent = useCallback((agentId: string | undefined) => {
+    isUserInteracting.current = true;
+
     setWorldState((prev) => ({
       ...prev,
       selectedAgentId: agentId,
       isMemoryPanelOpen: !!agentId,
     }));
+
+    setTimeout(() => {
+      isUserInteracting.current = false;
+    }, 2000);
   }, []);
 
   const moveAgent = useCallback(
     async (agentId: string, targetZoneId: string) => {
+      isUserInteracting.current = true;
+
       setIsLoading(true);
       setWorldState((prev) => ({ ...prev, isMoving: true }));
       try {
@@ -117,7 +148,6 @@ export const useWorldState = () => {
         if (!res.ok) throw new Error("Failed to move agent");
         const data = await res.json();
 
-        // Immediately update the agent status to "moving"
         setWorldState((prev) => ({
           ...prev,
           agents: prev.agents.map((agent) =>
@@ -127,16 +157,17 @@ export const useWorldState = () => {
           ),
         }));
 
-        // Refresh agents after a short delay to get updated status
         setTimeout(async () => {
-          await fetchAgents();
+          await fetchAgents(false);
           setWorldState((prev) => ({ ...prev, isMoving: false }));
-        }, 1000); // Match backend timeout
+          isUserInteracting.current = false;
+        }, 1000);
 
         return data;
       } catch (error) {
         console.error("Failed to move agent:", error);
         setWorldState((prev) => ({ ...prev, isMoving: false }));
+        isUserInteracting.current = false;
         throw error;
       } finally {
         setIsLoading(false);
@@ -145,25 +176,53 @@ export const useWorldState = () => {
     [fetchAgents]
   );
 
-  // Add real-time status updates
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Only refresh if we have agents and not currently loading
-      if (worldState.agents.length > 0 && !isLoading) {
-        fetchAgents();
+    const startPolling = () => {
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current);
       }
-    }, 3000); // Refresh every 3 seconds
 
-    return () => clearInterval(interval);
+      pollingTimeoutRef.current = setTimeout(() => {
+        if (
+          worldState.agents.length > 0 &&
+          !isLoading &&
+          !isUserInteracting.current
+        ) {
+          fetchAgents();
+        }
+        startPolling();
+      }, 5000);
+
+      return () => {
+        if (pollingTimeoutRef.current) {
+          clearTimeout(pollingTimeoutRef.current);
+        }
+      };
+    };
+
+    startPolling();
+
+    return () => {
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current);
+      }
+    };
   }, [worldState.agents.length, isLoading, fetchAgents]);
 
   const fetchAgentMemories = useCallback(async (agentId: string) => {
+    isUserInteracting.current = true;
+
+    const now = Date.now();
+    if (now - lastMemoryUpdate.current < 1000) {
+      return;
+    }
+    lastMemoryUpdate.current = now;
+
     setIsLoading(true);
     try {
       const res = await fetch(`/api/memory/${agentId}`);
       if (!res.ok) throw new Error("Failed to fetch memories");
       const memoriesRaw = await res.json();
-      // Backend does not provide id, location, importance, so we must adapt
       const memories: Memory[] = (memoriesRaw as any[]).map((m, idx) => ({
         id: String(idx + 1),
         agentId,
@@ -179,20 +238,30 @@ export const useWorldState = () => {
       setMemories([]);
     } finally {
       setIsLoading(false);
+      setTimeout(() => {
+        isUserInteracting.current = false;
+      }, 1500);
     }
   }, []);
 
   const closeMemoryPanel = useCallback(() => {
+    isUserInteracting.current = true;
+
     setWorldState((prev) => ({
       ...prev,
       isMemoryPanelOpen: false,
       selectedAgentId: undefined,
     }));
+
+    setTimeout(() => {
+      isUserInteracting.current = false;
+    }, 1000);
   }, []);
 
-  // Add a new memory to an agent
   const addAgentMemory = useCallback(
     async (agentId: string, memory: { type: string; content: string }) => {
+      isUserInteracting.current = true;
+
       setIsLoading(true);
       try {
         const res = await fetch(`/api/memory/${agentId}`, {
@@ -201,20 +270,24 @@ export const useWorldState = () => {
           body: JSON.stringify(memory),
         });
         if (!res.ok) throw new Error("Failed to add memory");
-        await fetchAgentMemories(agentId); // Refresh memories
+        await fetchAgentMemories(agentId);
       } catch (error) {
         console.error("Failed to add memory:", error);
         throw error;
       } finally {
         setIsLoading(false);
+        setTimeout(() => {
+          isUserInteracting.current = false;
+        }, 1500);
       }
     },
     [fetchAgentMemories]
   );
 
-  // Record a conversation between two agents
   const recordConversation = useCallback(
     async (fromId: string, toId: string, content: string) => {
+      isUserInteracting.current = true;
+
       setIsLoading(true);
       try {
         const res = await fetch(`/api/conversation`, {
@@ -223,7 +296,6 @@ export const useWorldState = () => {
           body: JSON.stringify({ fromId, toId, content }),
         });
         if (!res.ok) throw new Error("Failed to record conversation");
-        // Optionally refresh memories for both agents
         await Promise.all([
           fetchAgentMemories(fromId),
           fetchAgentMemories(toId),
@@ -233,6 +305,9 @@ export const useWorldState = () => {
         throw error;
       } finally {
         setIsLoading(false);
+        setTimeout(() => {
+          isUserInteracting.current = false;
+        }, 1500);
       }
     },
     [fetchAgentMemories]

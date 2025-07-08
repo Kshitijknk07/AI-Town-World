@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const agents = require("../agents/agents");
 
-// We are Getting the Agent Memory
 router.get("/:id", (req, res) => {
   console.log("Agents:", agents);
   console.log("Requested ID:", req.params.id);
@@ -13,7 +12,6 @@ router.get("/:id", (req, res) => {
   res.json(agent.memory);
 });
 
-// We are POST a new memory to agent
 router.post("/:id", (req, res) => {
   console.log("Agents:", agents);
   console.log("Requested ID:", req.params.id);

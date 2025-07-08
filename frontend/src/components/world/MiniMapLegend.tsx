@@ -68,7 +68,7 @@ export const MiniMapLegend: React.FC<MiniMapLegendProps> = ({
 
   return (
     <div className="w-full lg:w-80 space-y-4">
-      {/* Quick Actions */}
+      {}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -111,7 +111,7 @@ export const MiniMapLegend: React.FC<MiniMapLegendProps> = ({
         </CardContent>
       </Card>
 
-      {/* Zone Types */}
+      {}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Zone Types</CardTitle>
@@ -131,13 +131,13 @@ export const MiniMapLegend: React.FC<MiniMapLegendProps> = ({
         </CardContent>
       </Card>
 
-      {/* Agents Overview */}
+      {}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Active Agents</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* Status Summary */}
+          {}
           <div className="flex gap-2 mb-3">
             {Object.entries({
               idle: agents.filter((a) => a.status === "idle").length,
@@ -202,7 +202,7 @@ export const MiniMapLegend: React.FC<MiniMapLegendProps> = ({
         </CardContent>
       </Card>
 
-      {/* Population by Location */}
+      {}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Population Distribution</CardTitle>
