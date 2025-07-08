@@ -4,6 +4,13 @@ import { useAgentMemory } from "./hooks/useAgentMemory";
 import { WorldMap } from "./components/WorldMap";
 import { AgentMemory } from "./components/AgentMemory";
 import { useState } from "react";
+import { motion } from "framer-motion";
+
+interface ConversationEvent {
+  fromId: string;
+  toId: string;
+  timestamp: number;
+}
 
 function App() {
   const { agents, reloadAgents } = useAgents();
@@ -11,6 +18,8 @@ function App() {
   const { selectedMemory, loadMemory } = useAgentMemory();
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [showMemory, setShowMemory] = useState(false);
+  const [lastConversation, setLastConversation] =
+    useState<ConversationEvent | null>(null);
 
   // Handler for talking to another agent
   const handleTalk =
@@ -21,6 +30,8 @@ function App() {
         body: JSON.stringify({ fromId, toId, content }),
       });
       loadMemory(fromId);
+      setLastConversation({ fromId, toId, timestamp: Date.now() });
+      setTimeout(() => setLastConversation(null), 1800);
     };
 
   // Handler for moving an agent
@@ -55,17 +66,35 @@ function App() {
   const selectedAgent = agents.find((a) => a.id === selectedAgentId);
 
   return (
-    <div className="min-h-screen bg-green-100 text-gray-900 p-8">
-      <h1 className="text-4xl font-bold mb-6 text-center">
+    <motion.div
+      className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-green-100 via-blue-50 to-yellow-50 px-2 py-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.7 }}
+    >
+      <motion.h1
+        className="text-4xl font-extrabold mb-6 text-center drop-shadow-lg tracking-wide text-blue-900"
+        initial={{ y: -40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
+      >
         🧠 AI Town — Agent Memories
-      </h1>
-      <p className="mb-8 text-lg text-gray-700 text-center">{message}</p>
+      </motion.h1>
+      <motion.p
+        className="mb-8 text-lg text-gray-700 text-center"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
+      >
+        {message}
+      </motion.p>
 
       {/* World Map Visualization */}
       <WorldMap
         agents={agents}
         selectedAgentId={selectedAgentId}
         onAgentClick={handleAgentClick}
+        lastConversation={lastConversation}
       />
 
       {/* Floating Agent Memory Panel */}
@@ -79,7 +108,7 @@ function App() {
         onTalk={handleTalk(selectedAgentId || "")}
         onMove={handleMove(selectedAgentId || "")}
       />
-    </div>
+    </motion.div>
   );
 }
 

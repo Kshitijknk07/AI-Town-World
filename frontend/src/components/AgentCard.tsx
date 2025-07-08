@@ -66,7 +66,22 @@ export function AgentCard({
         >
           View Memory
         </Button>
-        <AgentMemory memories={memories} />
+        <AgentMemory
+          memories={memories}
+          open={false}
+          onClose={function (): void {
+            throw new Error("Function not implemented.");
+          }}
+          agentName={""}
+          agentId={""}
+          agents={[]}
+          onTalk={function (_toId: string, _content: string): void {
+            throw new Error("Function not implemented.");
+          }}
+          onMove={function (_newLocation: string): void {
+            throw new Error("Function not implemented.");
+          }}
+        />
       </CardFooter>
     </Card>
   );
