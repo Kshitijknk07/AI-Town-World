@@ -5,10 +5,15 @@ const ZONES = ["Park", "Gallery", "Library", "Cafe", "Plaza", "Workshop"];
 
 interface WorldMapProps {
   agents: Agent[];
+  selectedAgentId?: string | null;
   onAgentClick?: (agent: Agent) => void;
 }
 
-export function WorldMap({ agents, onAgentClick }: WorldMapProps) {
+export function WorldMap({
+  agents,
+  selectedAgentId,
+  onAgentClick,
+}: WorldMapProps) {
   // Group agents by location
   const agentsByZone: Record<string, Agent[]> = {};
   ZONES.forEach((zone) => {
@@ -21,17 +26,20 @@ export function WorldMap({ agents, onAgentClick }: WorldMapProps) {
   });
 
   return (
-    <div className="mb-8">
-      <h2 className="text-2xl font-bold mb-4 text-blue-200">World Map</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {ZONES.map((zone) => (
-          <Zone
-            key={zone}
-            name={zone}
-            agents={agentsByZone[zone]}
-            onAgentClick={onAgentClick}
-          />
-        ))}
+    <div className="mb-8 flex flex-col items-center">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">🗺️ AI Town Map</h2>
+      <div className="bg-green-50 border border-green-200 rounded-3xl p-8 shadow-lg flex flex-col items-center">
+        <div className="grid grid-cols-2 grid-rows-3 gap-8">
+          {ZONES.map((zone) => (
+            <Zone
+              key={zone}
+              name={zone}
+              agents={agentsByZone[zone]}
+              selectedAgentId={selectedAgentId}
+              onAgentClick={onAgentClick}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

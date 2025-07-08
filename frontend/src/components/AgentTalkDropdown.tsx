@@ -1,4 +1,12 @@
 import type { Agent } from "../types/agent";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { MessageCircle } from "lucide-react";
 
 interface AgentTalkDropdownProps {
   agent: Agent;
@@ -12,10 +20,8 @@ export function AgentTalkDropdown({
   onTalk,
 }: AgentTalkDropdownProps) {
   return (
-    <select
-      className="mt-4 w-full bg-gray-700 text-white p-2 rounded"
-      onChange={(e) => {
-        const targetId = e.target.value;
+    <Select
+      onValueChange={(targetId) => {
         if (!targetId) return;
         const content = prompt(
           `What should ${agent.name} say to ${
@@ -27,14 +33,19 @@ export function AgentTalkDropdown({
         }
       }}
     >
-      <option value="">💬 Talk to another agent...</option>
-      {agents
-        .filter((a) => a.id !== agent.id)
-        .map((target) => (
-          <option key={target.id} value={target.id}>
-            {target.name}
-          </option>
-        ))}
-    </select>
+      <SelectTrigger className="mt-4 w-full bg-purple-800 text-white border-purple-400">
+        <MessageCircle className="mr-2 h-4 w-4 text-yellow-300" />
+        <SelectValue placeholder="💬 Talk to another agent..." />
+      </SelectTrigger>
+      <SelectContent>
+        {agents
+          .filter((a) => a.id !== agent.id)
+          .map((target) => (
+            <SelectItem key={target.id} value={target.id}>
+              {target.name}
+            </SelectItem>
+          ))}
+      </SelectContent>
+    </Select>
   );
 }
