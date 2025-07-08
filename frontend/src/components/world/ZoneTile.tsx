@@ -1,8 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { Agent, Zone } from "@/types/agent";
 import { AgentAvatar } from "./AgentAvatar";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Move, MessageCircle, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ZoneTileProps {
@@ -40,6 +48,8 @@ export const ZoneTile: React.FC<ZoneTileProps> = ({
   onAgentMove,
   isMoving,
 }) => {
+  const [hoveredAgent, setHoveredAgent] = useState<string | null>(null);
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const agentId = e.dataTransfer.getData("agent-id");
@@ -79,14 +89,75 @@ export const ZoneTile: React.FC<ZoneTileProps> = ({
       {/* Agents */}
       <div className="grid grid-cols-2 gap-1">
         {agents.slice(0, 4).map((agent) => (
-          <AgentAvatar
+          <div
             key={agent.id}
-            agent={agent}
-            isSelected={agent.id === selectedAgentId}
-            onClick={() => onAgentSelect(agent.id)}
-            size="sm"
-            showTooltip
-          />
+            className="relative group"
+            onMouseEnter={() => setHoveredAgent(agent.id)}
+            onMouseLeave={() => setHoveredAgent(null)}
+          >
+            <AgentAvatar
+              agent={agent}
+              isSelected={agent.id === selectedAgentId}
+              onClick={() => onAgentSelect(agent.id)}
+              size="sm"
+              showTooltip
+            />
+
+            {/* Agent Actions Dropdown */}
+            {hoveredAgent === agent.id && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute -top-1 -right-1 w-5 h-5 p-0 bg-white/80 hover:bg-white"
+                  >
+                    <MoreHorizontal className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => onAgentSelect(agent.id)}>
+                    <Brain className="w-4 h-4 mr-2" />
+                    View Memories
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      // Show available zones for movement
+                      const otherZones = allAgents
+                        .filter((a) => a.id !== agent.id)
+                        .map((a) => a.currentLocation)
+                        .filter(
+                          (loc, index, arr) => arr.indexOf(loc) === index
+                        );
+
+                      if (otherZones.length > 0) {
+                        const targetZone = otherZones[0];
+                        onAgentMove(agent.id, targetZone);
+                      }
+                    }}
+                  >
+                    <Move className="w-4 h-4 mr-2" />
+                    Move Agent
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      // Find another agent to talk to
+                      const otherAgent = allAgents.find(
+                        (a) => a.id !== agent.id
+                      );
+                      if (otherAgent) {
+                        onAgentSelect(agent.id);
+                        // This will open the memory panel where they can talk
+                      }
+                    }}
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Talk to Others
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         ))}
         {agents.length > 4 && (
           <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-medium">

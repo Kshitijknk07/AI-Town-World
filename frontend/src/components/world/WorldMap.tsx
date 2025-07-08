@@ -110,7 +110,12 @@ export const WorldMap: React.FC<WorldMapProps> = ({
       </div>
 
       {/* Mini Map Legend */}
-      <MiniMapLegend zones={zones} agents={agents} />
+      <MiniMapLegend
+        zones={zones}
+        agents={agents}
+        onAgentSelect={onAgentSelect}
+        onAgentMove={onAgentMove}
+      />
     </div>
   );
 };

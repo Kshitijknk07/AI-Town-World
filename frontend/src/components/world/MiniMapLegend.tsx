@@ -2,11 +2,15 @@ import React from "react";
 import { Agent, Zone } from "@/types/agent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Play, Users, MessageCircle, Shuffle } from "lucide-react";
 
 interface MiniMapLegendProps {
   zones: Zone[];
   agents: Agent[];
+  onAgentSelect?: (agentId: string) => void;
+  onAgentMove?: (agentId: string, targetZoneId: string) => void;
 }
 
 const zoneTypeIcons = {
@@ -20,6 +24,8 @@ const zoneTypeIcons = {
 export const MiniMapLegend: React.FC<MiniMapLegendProps> = ({
   zones,
   agents,
+  onAgentSelect,
+  onAgentMove,
 }) => {
   const zoneTypeCounts = zones.reduce((acc, zone) => {
     acc[zone.type] = (acc[zone.type] || 0) + 1;
@@ -34,8 +40,71 @@ export const MiniMapLegend: React.FC<MiniMapLegendProps> = ({
     return acc;
   }, {} as Record<string, number>);
 
+  const handleRandomMove = () => {
+    if (!onAgentMove) return;
+
+    agents.forEach((agent) => {
+      const availableZones = zones.filter(
+        (z) => z.id !== agent.currentLocation
+      );
+      if (availableZones.length > 0) {
+        const randomZone =
+          availableZones[Math.floor(Math.random() * availableZones.length)];
+        onAgentMove(agent.id, randomZone.id);
+      }
+    });
+  };
+
+  const handleViewAllMemories = () => {
+    if (!onAgentSelect || agents.length === 0) return;
+    onAgentSelect(agents[0].id);
+  };
+
   return (
     <div className="w-full lg:w-80 space-y-4">
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Play className="w-5 h-5" />
+            Quick Actions
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={handleRandomMove}
+          >
+            <Shuffle className="w-4 h-4 mr-2" />
+            Move All Agents
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={handleViewAllMemories}
+          >
+            <Users className="w-4 h-4 mr-2" />
+            View All Memories
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => {
+              if (agents.length >= 2) {
+                onAgentSelect?.(agents[0].id);
+              }
+            }}
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            Start Conversations
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Zone Types */}
       <Card>
         <CardHeader className="pb-3">
@@ -63,7 +132,11 @@ export const MiniMapLegend: React.FC<MiniMapLegendProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           {agents.map((agent) => (
-            <div key={agent.id} className="flex items-center gap-3">
+            <div
+              key={agent.id}
+              className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
+              onClick={() => onAgentSelect?.(agent.id)}
+            >
               <div
                 className="w-4 h-4 rounded-full border-2"
                 style={{
