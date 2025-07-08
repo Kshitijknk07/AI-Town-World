@@ -18,6 +18,7 @@ export const useWorldState = () => {
   const isUserInteracting = useRef(false);
   const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastMemoryUpdate = useRef<number>(0);
+  const memoryPanelOpenRef = useRef<boolean>(false);
 
   const buildZonesWithAgents = (zones: Zone[], agents: Agent[]): Zone[] => {
     return zones.map((zone) => ({
@@ -45,7 +46,8 @@ export const useWorldState = () => {
 
   const fetchAgents = useCallback(
     async (preserveSelection = true) => {
-      if (isUserInteracting.current) {
+      // Don't fetch if user is interacting or memory panel is open
+      if (isUserInteracting.current || memoryPanelOpenRef.current) {
         return;
       }
 
@@ -121,6 +123,7 @@ export const useWorldState = () => {
 
   const selectAgent = useCallback((agentId: string | undefined) => {
     isUserInteracting.current = true;
+    memoryPanelOpenRef.current = !!agentId;
 
     setWorldState((prev) => ({
       ...prev,
@@ -128,9 +131,10 @@ export const useWorldState = () => {
       isMemoryPanelOpen: !!agentId,
     }));
 
+    // Clear interaction flag after a longer delay for memory panel
     setTimeout(() => {
       isUserInteracting.current = false;
-    }, 2000);
+    }, 3000); // Increased to 3 seconds for memory panel interactions
   }, []);
 
   const moveAgent = useCallback(
@@ -176,6 +180,7 @@ export const useWorldState = () => {
     [fetchAgents]
   );
 
+  // Completely disable polling when memory panel is open
   useEffect(() => {
     const startPolling = () => {
       if (pollingTimeoutRef.current) {
@@ -183,15 +188,17 @@ export const useWorldState = () => {
       }
 
       pollingTimeoutRef.current = setTimeout(() => {
+        // Only refresh if we have agents, not currently loading, user is not interacting, and memory panel is closed
         if (
           worldState.agents.length > 0 &&
           !isLoading &&
-          !isUserInteracting.current
+          !isUserInteracting.current &&
+          !memoryPanelOpenRef.current
         ) {
           fetchAgents();
         }
         startPolling();
-      }, 5000);
+      }, 8000); // Increased to 8 seconds to reduce flickering
 
       return () => {
         if (pollingTimeoutRef.current) {
@@ -211,9 +218,10 @@ export const useWorldState = () => {
 
   const fetchAgentMemories = useCallback(async (agentId: string) => {
     isUserInteracting.current = true;
+    memoryPanelOpenRef.current = true;
 
     const now = Date.now();
-    if (now - lastMemoryUpdate.current < 1000) {
+    if (now - lastMemoryUpdate.current < 2000) {
       return;
     }
     lastMemoryUpdate.current = now;
@@ -238,14 +246,13 @@ export const useWorldState = () => {
       setMemories([]);
     } finally {
       setIsLoading(false);
-      setTimeout(() => {
-        isUserInteracting.current = false;
-      }, 1500);
+      // Don't clear interaction flag for memory operations - keep it blocked
     }
   }, []);
 
   const closeMemoryPanel = useCallback(() => {
     isUserInteracting.current = true;
+    memoryPanelOpenRef.current = false;
 
     setWorldState((prev) => ({
       ...prev,
@@ -253,14 +260,16 @@ export const useWorldState = () => {
       selectedAgentId: undefined,
     }));
 
+    // Clear interaction flag after a delay
     setTimeout(() => {
       isUserInteracting.current = false;
-    }, 1000);
+    }, 2000);
   }, []);
 
   const addAgentMemory = useCallback(
     async (agentId: string, memory: { type: string; content: string }) => {
       isUserInteracting.current = true;
+      memoryPanelOpenRef.current = true;
 
       setIsLoading(true);
       try {
@@ -276,9 +285,7 @@ export const useWorldState = () => {
         throw error;
       } finally {
         setIsLoading(false);
-        setTimeout(() => {
-          isUserInteracting.current = false;
-        }, 1500);
+        // Don't clear interaction flag - keep memory panel stable
       }
     },
     [fetchAgentMemories]
@@ -287,6 +294,7 @@ export const useWorldState = () => {
   const recordConversation = useCallback(
     async (fromId: string, toId: string, content: string) => {
       isUserInteracting.current = true;
+      memoryPanelOpenRef.current = true;
 
       setIsLoading(true);
       try {
@@ -305,9 +313,7 @@ export const useWorldState = () => {
         throw error;
       } finally {
         setIsLoading(false);
-        setTimeout(() => {
-          isUserInteracting.current = false;
-        }, 1500);
+        // Don't clear interaction flag - keep memory panel stable
       }
     },
     [fetchAgentMemories]

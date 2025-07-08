@@ -69,6 +69,18 @@ const importanceColors = {
   10: "bg-red-100",
 };
 
+const availableZones = [
+  "residential-1",
+  "residential-2",
+  "commercial-1",
+  "commercial-2",
+  "park-1",
+  "park-2",
+  "civic-1",
+  "civic-2",
+  "special-1",
+];
+
 export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
   ({
     agent,
@@ -82,6 +94,7 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
     const { addAgentMemory, recordConversation } = useWorldState();
     const [memoryType, setMemoryType] = useState("observation");
     const [memoryContent, setMemoryContent] = useState("");
+    const [memoryDestination, setMemoryDestination] = useState("");
     const [adding, setAdding] = useState(false);
     const [talkToId, setTalkToId] = useState("");
     const [talkContent, setTalkContent] = useState("");
@@ -101,6 +114,13 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
       [memories]
     );
 
+    // Reset destination when memory type changes
+    useEffect(() => {
+      if (memoryType !== "movement") {
+        setMemoryDestination("");
+      }
+    }, [memoryType]);
+
     useEffect(() => {
       if (agent && isOpen) {
         onFetchMemories(agent.id);
@@ -118,17 +138,36 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
           });
           return;
         }
+
+        // For movement type, require destination
+        if (memoryType === "movement" && !memoryDestination) {
+          toast({
+            title: "Destination required",
+            description: "Please select a destination for movement.",
+            variant: "destructive",
+          });
+          return;
+        }
+
         setAdding(true);
         try {
+          const finalContent =
+            memoryType === "movement"
+              ? `${memoryContent} to ${memoryDestination
+                  .replace("-", " ")
+                  .replace(/\b\w/g, (l) => l.toUpperCase())}`
+              : memoryContent;
+
           await addAgentMemory(agent.id, {
             type: memoryType,
-            content: memoryContent,
+            content: finalContent,
           });
           toast({
             title: "Memory added",
             description: "A new memory was added.",
           });
           setMemoryContent("");
+          setMemoryDestination("");
         } catch (err) {
           toast({
             title: "Failed to add memory",
@@ -139,7 +178,7 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
           setAdding(false);
         }
       },
-      [memoryContent, memoryType, agent, addAgentMemory]
+      [memoryContent, memoryType, memoryDestination, agent, addAgentMemory]
     );
 
     const handleTalkSubmit = useCallback(
@@ -243,15 +282,51 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
                 </Select>
                 <Button
                   type="submit"
-                  disabled={adding || !memoryContent.trim()}
+                  disabled={
+                    adding ||
+                    !memoryContent.trim() ||
+                    (memoryType === "movement" && !memoryDestination)
+                  }
                 >
                   {adding ? "Adding..." : "Add Memory"}
                 </Button>
               </div>
+
+              {/* Destination selector for movement */}
+              {memoryType === "movement" && (
+                <div className="flex gap-2 items-center">
+                  <Select
+                    value={memoryDestination}
+                    onValueChange={setMemoryDestination}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select destination..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableZones.map((zoneId) => (
+                        <SelectItem key={zoneId} value={zoneId}>
+                          {zoneId
+                            .replace("-", " ")
+                            .replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <Textarea
                 value={memoryContent}
                 onChange={(e) => setMemoryContent(e.target.value)}
-                placeholder="What happened? (e.g., 'Saw a beautiful sunset at the park')"
+                placeholder={
+                  memoryType === "movement"
+                    ? "What happened during the move? (e.g., 'Walked through the park')"
+                    : memoryType === "observation"
+                    ? "What happened? (e.g., 'Saw a beautiful sunset at the park')"
+                    : memoryType === "conversation"
+                    ? "What was said? (e.g., 'Had a great chat about the weather')"
+                    : "What idea did you have? (e.g., 'Thought about building a new machine')"
+                }
                 rows={2}
                 className="resize-none"
                 disabled={adding}
@@ -300,7 +375,7 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
               <Badge variant="secondary">{memories.length} memories</Badge>
             </div>
 
-            <ScrollArea className="h-[calc(100vh-300px)]">
+            <ScrollArea className="h-[calc(100vh-400px)]">
               {isLoading ? (
                 <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
