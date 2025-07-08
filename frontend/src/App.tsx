@@ -67,6 +67,7 @@ function App() {
               Location: {agent.location}
             </p>
 
+            {/* View Memory Button */}
             <button
               className="mt-4 bg-purple-600 px-4 py-2 rounded hover:bg-purple-700 transition"
               onClick={() => loadMemory(agent.id)}
@@ -74,6 +75,46 @@ function App() {
               View Memory
             </button>
 
+            {/* Dropdown for Talking to Another Agent */}
+            <select
+              className="mt-4 w-full bg-gray-700 text-white p-2 rounded"
+              onChange={(e) => {
+                const targetId = e.target.value;
+                if (!targetId) return;
+                const content = prompt(
+                  `What should ${agent.name} say to ${
+                    agents.find((a) => a.id === targetId)?.name
+                  }?`
+                );
+                if (content) {
+                  fetch("http://localhost:3000/api/conversation", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      fromId: agent.id,
+                      toId: targetId,
+                      content,
+                    }),
+                  })
+                    .then((res) => res.json())
+                    .then(() => loadMemory(agent.id))
+                    .catch((err) =>
+                      console.error("Failed to send message:", err)
+                    );
+                }
+              }}
+            >
+              <option value="">💬 Talk to another agent...</option>
+              {agents
+                .filter((a) => a.id !== agent.id)
+                .map((target) => (
+                  <option key={target.id} value={target.id}>
+                    {target.name}
+                  </option>
+                ))}
+            </select>
+
+            {/* Memory Display */}
             {selectedMemory[agent.id]?.length > 0 && (
               <div className="mt-4 bg-gray-700 p-4 rounded">
                 <h3 className="text-lg font-bold mb-2">Memory Log:</h3>

@@ -8,6 +8,9 @@ const application = express();
 application.use(cors());
 application.use(express.json());
 
+const conversationRoutes = require("./routes/conversationRoutes");
+application.use("/api/conversation", conversationRoutes);
+
 const agentRoutes = require("./routes/agentRoutes");
 application.use("/api/agents", agentRoutes);
 
