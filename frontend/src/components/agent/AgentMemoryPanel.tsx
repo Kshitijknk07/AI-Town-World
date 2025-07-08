@@ -32,6 +32,7 @@ interface AgentMemoryPanelProps {
   isLoading: boolean;
   onClose: () => void;
   onFetchMemories: (agentId: string) => void;
+  agents: Agent[]; // Add agents prop
 }
 
 const memoryTypeIcons = {
@@ -61,6 +62,7 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = ({
   isLoading,
   onClose,
   onFetchMemories,
+  agents, // Add agents to destructuring
 }) => {
   const { addAgentMemory, recordConversation } = useWorldState();
   const [memoryType, setMemoryType] = useState("observation");
@@ -206,8 +208,8 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = ({
                 <SelectContent>
                   {agent &&
                     agent.id &&
-                    useWorldState()
-                      .worldState.agents.filter((a) => a.id !== agent.id)
+                    agents
+                      .filter((a) => a.id !== agent.id)
                       .map((a) => (
                         <SelectItem key={a.id} value={a.id}>
                           {a.name}

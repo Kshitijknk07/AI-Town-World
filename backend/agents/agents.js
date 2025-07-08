@@ -7,7 +7,8 @@ const agents = [
     role: "Artist",
     personality: "Creative, Expressive, Dreamy",
     backstory: "Luna paints murals inspired by agent dreams",
-    location: "Gallery",
+    location: "cafe",
+    status: "idle",
     memory: [],
   },
 
@@ -17,7 +18,8 @@ const agents = [
     role: "Engineer",
     personality: "Curious, Logical, Introverted",
     backstory: "Aiden moved to AI Town to build helpful Machines.",
-    location: "Park",
+    location: "park",
+    status: "idle",
     memory: [],
   },
 
@@ -27,7 +29,8 @@ const agents = [
     role: "Historian",
     personality: "Wise, observant, calm",
     backstory: "Nova archives the stories of every agent in town.",
-    location: "Library",
+    location: "library",
+    status: "idle",
     memory: [],
   },
 ];

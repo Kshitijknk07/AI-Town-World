@@ -58,6 +58,7 @@ const Index = () => {
           isLoading={isLoading}
           onClose={closeMemoryPanel}
           onFetchMemories={fetchAgentMemories}
+          agents={worldState.agents}
         />
       </div>
     </TooltipProvider>

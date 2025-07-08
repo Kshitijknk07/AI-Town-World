@@ -13,12 +13,22 @@ router.post("/:id", (req, res) => {
     return res.status(400).json({ error: "Invalid Location" });
   }
 
+  // Update agent location and status
   agent.location = location;
+  agent.status = "moving";
+
+  // Add movement memory
   agent.memory.push({
     timestamp: new Date().toISOString(),
     type: "movement",
     content: `Moved to ${location}`,
+    location: location,
   });
+
+  // Reset status to idle after a short delay (simulate movement)
+  setTimeout(() => {
+    agent.status = "idle";
+  }, 1000);
 
   res.json({ message: "Agent moved", agent });
 });

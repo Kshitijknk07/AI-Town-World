@@ -1,91 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Agent, Zone, Memory, WorldState } from "@/types/agent";
 
-// Static list of possible zones (since backend does not provide /api/zones)
-const staticZones: Omit<Zone, "agentIds">[] = [
-  {
-    id: "bookstore",
-    name: "Bookstore",
-    description: "A cozy bookstore",
-    type: "commercial",
-    x: 1,
-    y: 1,
-    capacity: 3,
-  },
-  {
-    id: "town-hall",
-    name: "Town Hall",
-    description: "Administrative center",
-    type: "civic",
-    x: 2,
-    y: 1,
-    capacity: 5,
-  },
-  {
-    id: "park",
-    name: "Central Park",
-    description: "Green space for relaxation",
-    type: "park",
-    x: 0,
-    y: 2,
-    capacity: 6,
-  },
-  {
-    id: "cafe",
-    name: "Town Café",
-    description: "Popular meeting spot",
-    type: "commercial",
-    x: 1,
-    y: 2,
-    capacity: 4,
-  },
-  {
-    id: "library",
-    name: "Library",
-    description: "Quiet study space",
-    type: "civic",
-    x: 2,
-    y: 2,
-    capacity: 8,
-  },
-  {
-    id: "market",
-    name: "Market Square",
-    description: "Bustling marketplace",
-    type: "commercial",
-    x: 0,
-    y: 0,
-    capacity: 10,
-  },
-  {
-    id: "residential-1",
-    name: "Oak Street",
-    description: "Quiet residential area",
-    type: "residential",
-    x: 0,
-    y: 1,
-    capacity: 2,
-  },
-  {
-    id: "residential-2",
-    name: "Maple Avenue",
-    description: "Family neighborhood",
-    type: "residential",
-    x: 2,
-    y: 0,
-    capacity: 2,
-  },
-  {
-    id: "school",
-    name: "Elementary School",
-    description: "Local school",
-    type: "civic",
-    x: 1,
-    y: 0,
-    capacity: 15,
-  },
-];
-
 export const useWorldState = () => {
   const [worldState, setWorldState] = useState<WorldState>({
     agents: [],
@@ -100,20 +15,31 @@ export const useWorldState = () => {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Helper to build zones from agents' current locations
-  const buildZones = (agents: Agent[]): Zone[] => {
-    console.log("Building zones with agents:", agents);
-
-    const zones = staticZones.map((zone) => ({
+  // Helper to build zones with agent assignments
+  const buildZonesWithAgents = (zones: Zone[], agents: Agent[]): Zone[] => {
+    return zones.map((zone) => ({
       ...zone,
       agentIds: agents
         .filter((a) => a.currentLocation === zone.id)
         .map((a) => a.id),
     }));
-
-    console.log("Built zones:", zones);
-    return zones;
   };
+
+  // Fetch zones from backend
+  const fetchZones = useCallback(async () => {
+    try {
+      const res = await fetch("/api/zones");
+      if (!res.ok) {
+        throw new Error(`Failed to fetch zones: ${res.status}`);
+      }
+      const zones: Zone[] = await res.json();
+      console.log("Fetched zones from backend:", zones);
+      return zones;
+    } catch (error) {
+      console.error("Failed to fetch zones:", error);
+      return [];
+    }
+  }, []);
 
   // Fetch agents from backend
   const fetchAgents = useCallback(async () => {
@@ -126,6 +52,7 @@ export const useWorldState = () => {
       const backendAgents = await res.json();
       console.log("Fetched agents from backend:", backendAgents);
 
+      // Transform backend agents to match frontend interface
       const agents: Agent[] = backendAgents.map(
         (backendAgent: any, index: number) => ({
           id: backendAgent.id,
@@ -134,7 +61,7 @@ export const useWorldState = () => {
           backstory: backendAgent.backstory,
           currentLocation: backendAgent.location, // Map 'location' to 'currentLocation'
           color: `hsl(${index * 120}, 70%, 50%)`, // Generate colors for agents
-          status: "idle" as const,
+          status: backendAgent.status || "idle",
         })
       );
 
@@ -147,10 +74,14 @@ export const useWorldState = () => {
 
       console.log("Valid agents:", validAgents);
 
+      // Fetch zones and build complete state
+      const zones = await fetchZones();
+      const zonesWithAgents = buildZonesWithAgents(zones, validAgents);
+
       setWorldState((prev) => ({
         ...prev,
         agents: validAgents,
-        zones: buildZones(validAgents),
+        zones: zonesWithAgents,
       }));
     } catch (error) {
       console.error("Failed to fetch agents:", error);
@@ -158,12 +89,12 @@ export const useWorldState = () => {
       setWorldState((prev) => ({
         ...prev,
         agents: [],
-        zones: buildZones([]),
+        zones: [],
       }));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchZones]);
 
   useEffect(() => {
     fetchAgents();

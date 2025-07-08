@@ -24,8 +24,9 @@ router.post("/:id", (req, res) => {
 
   const memory = {
     timestamp: new Date().toISOString(),
-    type: req.body.type || "event",
+    type: req.body.type || "observation",
     content: req.body.content || "No Content",
+    location: agent.location,
   };
 
   agent.memory.push(memory);
