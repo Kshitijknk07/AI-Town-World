@@ -1,20 +1,57 @@
-// Agent-related type definitions
-export type Agent = {
+export interface Agent {
   id: string;
   name: string;
   role: string;
-  personality: string;
   backstory: string;
-  location: string;
-  memory: Memory[];
-};
+  currentLocation: string;
+  avatar?: string;
+  color: string;
+  status: "idle" | "moving" | "talking" | "thinking";
+}
 
-export type Memory = {
-  timestamp: string;
-  type: string;
+export interface Zone {
+  id: string;
+  name: string;
+  description: string;
+  type: "residential" | "commercial" | "park" | "civic" | "special";
+  x: number;
+  y: number;
+  capacity: number;
+  agentIds: string[];
+}
+
+export interface Memory {
+  id: string;
+  agentId: string;
+  type: "observation" | "conversation" | "action" | "thought";
   content: string;
-};
+  timestamp: Date;
+  location: string;
+  importance: number;
+}
 
-export type AgentMemoryMap = {
-  [agentId: string]: Memory[];
-};
+export interface Conversation {
+  id: string;
+  participants: string[];
+  messages: ConversationMessage[];
+  location: string;
+  startTime: Date;
+  endTime?: Date;
+}
+
+export interface ConversationMessage {
+  id: string;
+  senderId: string;
+  content: string;
+  timestamp: Date;
+}
+
+export interface WorldState {
+  agents: Agent[];
+  zones: Zone[];
+  conversations: Conversation[];
+  selectedAgentId?: string;
+  isMemoryPanelOpen: boolean;
+  isMoving: boolean;
+  isTalking: boolean;
+}
