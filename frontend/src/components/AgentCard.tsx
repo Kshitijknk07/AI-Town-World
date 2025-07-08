@@ -10,6 +10,7 @@ interface AgentCardProps {
   onViewMemory: () => void;
   onTalk: (toId: string, content: string) => void;
   onMove: (newLocation: string) => void;
+  highlighted?: boolean;
 }
 
 export function AgentCard({
@@ -19,9 +20,16 @@ export function AgentCard({
   onViewMemory,
   onTalk,
   onMove,
+  highlighted = false,
 }: AgentCardProps) {
   return (
-    <div className="bg-gray-800 p-6 rounded-xl shadow-md">
+    <div
+      className={`bg-gray-800 p-6 rounded-xl shadow-md transition-all duration-500 relative ${
+        highlighted
+          ? "border-4 border-yellow-400 shadow-yellow-400/50 z-10 scale-105"
+          : "border border-gray-700"
+      }`}
+    >
       <h2 className="text-2xl font-semibold">{agent.name}</h2>
       <p className="text-sm text-gray-400 italic">{agent.role}</p>
       <p className="mt-2">{agent.backstory}</p>

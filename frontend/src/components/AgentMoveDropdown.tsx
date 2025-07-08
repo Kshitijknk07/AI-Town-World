@@ -5,7 +5,7 @@ interface AgentMoveDropdownProps {
 
 const LOCATIONS = ["Park", "Gallery", "Library", "Cafe", "Plaza", "Workshop"];
 
-export function AgentMoveDropdown({ agentId, onMove }: AgentMoveDropdownProps) {
+export function AgentMoveDropdown({ onMove }: AgentMoveDropdownProps) {
   return (
     <select
       className="mt-4 w-full bg-blue-700 text-white p-2 rounded"
