@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Agent, Memory } from "@/types/agent";
 import {
   Sheet,
@@ -13,6 +13,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Brain, MessageCircle, Eye, Lightbulb } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useWorldState } from "@/hooks/useWorldState";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
 
 interface AgentMemoryPanelProps {
   agent: Agent | undefined;
@@ -51,6 +62,14 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = ({
   onClose,
   onFetchMemories,
 }) => {
+  const { addAgentMemory, recordConversation } = useWorldState();
+  const [memoryType, setMemoryType] = useState("observation");
+  const [memoryContent, setMemoryContent] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [talkToId, setTalkToId] = useState("");
+  const [talkContent, setTalkContent] = useState("");
+  const [talking, setTalking] = useState(false);
+
   useEffect(() => {
     if (agent && isOpen) {
       onFetchMemories(agent.id);
@@ -58,6 +77,35 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = ({
   }, [agent, isOpen, onFetchMemories]);
 
   if (!agent) return null;
+
+  const handleAddMemory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!memoryContent.trim()) {
+      toast({
+        title: "Content required",
+        description: "Please enter memory content.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setAdding(true);
+    try {
+      await addAgentMemory(agent.id, {
+        type: memoryType,
+        content: memoryContent,
+      });
+      toast({ title: "Memory added", description: "A new memory was added." });
+      setMemoryContent("");
+    } catch (err) {
+      toast({
+        title: "Failed to add memory",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setAdding(false);
+    }
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -90,6 +138,99 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = ({
         <Separator className="my-4" />
 
         <div className="space-y-4 flex-1">
+          {/* Add Memory Form */}
+          <form onSubmit={handleAddMemory} className="flex flex-col gap-2 mb-4">
+            <div className="flex gap-2 items-center">
+              <Select value={memoryType} onValueChange={setMemoryType}>
+                <SelectTrigger className="w-36">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="observation">Observation</SelectItem>
+                  <SelectItem value="conversation">Conversation</SelectItem>
+                  <SelectItem value="action">Action</SelectItem>
+                  <SelectItem value="thought">Thought</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button type="submit" disabled={adding || !memoryContent.trim()}>
+                {adding ? "Adding..." : "Add Memory"}
+              </Button>
+            </div>
+            <Textarea
+              value={memoryContent}
+              onChange={(e) => setMemoryContent(e.target.value)}
+              placeholder="Enter memory content..."
+              rows={2}
+              className="resize-none"
+              disabled={adding}
+            />
+          </form>
+
+          {/* Talk to Another Agent Form */}
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!talkToId || !talkContent.trim()) {
+                toast({
+                  title: "Recipient and message required",
+                  description: "Select an agent and enter a message.",
+                  variant: "destructive",
+                });
+                return;
+              }
+              setTalking(true);
+              try {
+                await recordConversation(agent.id, talkToId, talkContent);
+                toast({
+                  title: "Conversation recorded",
+                  description: "Message sent to agent.",
+                });
+                setTalkContent("");
+              } catch (err) {
+                toast({
+                  title: "Failed to send message",
+                  description: "Please try again.",
+                  variant: "destructive",
+                });
+              } finally {
+                setTalking(false);
+              }
+            }}
+            className="flex flex-col gap-2 mb-4"
+          >
+            <div className="flex gap-2 items-center">
+              <Select value={talkToId} onValueChange={setTalkToId}>
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Talk to..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {agent &&
+                    agent.id &&
+                    useWorldState()
+                      .worldState.agents.filter((a) => a.id !== agent.id)
+                      .map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="submit"
+                disabled={talking || !talkToId || !talkContent.trim()}
+              >
+                {talking ? "Sending..." : "Talk"}
+              </Button>
+            </div>
+            <Textarea
+              value={talkContent}
+              onChange={(e) => setTalkContent(e.target.value)}
+              placeholder="Say something..."
+              rows={2}
+              className="resize-none"
+              disabled={talking}
+            />
+          </form>
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <Brain className="w-5 h-5" />

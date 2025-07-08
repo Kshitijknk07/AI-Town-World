@@ -21,15 +21,52 @@ export const WorldMap: React.FC<WorldMapProps> = ({
   isMoving,
 }) => {
   // Calculate grid dimensions
-  const maxX = Math.max(...zones.map((z) => z.x));
-  const maxY = Math.max(...zones.map((z) => z.y));
+  if (!zones || zones.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <span className="text-gray-500">Loading map...</span>
+      </div>
+    );
+  }
+
+  // Safety check for valid coordinates
+  const validZones = zones.filter(
+    (zone) =>
+      typeof zone.x === "number" &&
+      typeof zone.y === "number" &&
+      zone.x >= 0 &&
+      zone.y >= 0
+  );
+
+  if (validZones.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <span className="text-gray-500">No valid zones found</span>
+      </div>
+    );
+  }
+
+  const maxX = Math.max(...validZones.map((z) => z.x));
+  const maxY = Math.max(...validZones.map((z) => z.y));
+
+  // Safety check for reasonable grid size
+  if (maxX > 100 || maxY > 100) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <span className="text-gray-500">Grid size too large</span>
+      </div>
+    );
+  }
 
   // Create a 2D grid
   const grid = Array(maxY + 1)
     .fill(null)
     .map(() => Array(maxX + 1).fill(null));
-  zones.forEach((zone) => {
-    grid[zone.y][zone.x] = zone;
+
+  validZones.forEach((zone) => {
+    if (zone.y < grid.length && zone.x < grid[0].length) {
+      grid[zone.y][zone.x] = zone;
+    }
   });
 
   return (

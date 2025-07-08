@@ -1,47 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { Agent, Zone, Memory, WorldState } from "@/types/agent";
 
-// Mock data for demonstration - replace with actual API calls
-const mockAgents: Agent[] = [
-  {
-    id: "1",
-    name: "Alice",
-    role: "Shopkeeper",
-    backstory: "Runs the local bookstore and loves recommending novels",
-    currentLocation: "bookstore",
-    color: "#3B82F6",
-    status: "idle",
-  },
-  {
-    id: "2",
-    name: "Bob",
-    role: "Mayor",
-    backstory: "Town mayor who cares deeply about community welfare",
-    currentLocation: "town-hall",
-    color: "#EF4444",
-    status: "idle",
-  },
-  {
-    id: "3",
-    name: "Carol",
-    role: "Artist",
-    backstory: "Local painter who finds inspiration in everyday life",
-    currentLocation: "park",
-    color: "#10B981",
-    status: "idle",
-  },
-  {
-    id: "4",
-    name: "David",
-    role: "Chef",
-    backstory: "Passionate chef who runs the town café",
-    currentLocation: "cafe",
-    color: "#F59E0B",
-    status: "idle",
-  },
-];
-
-const mockZones: Zone[] = [
+// Static list of possible zones (since backend does not provide /api/zones)
+const staticZones: Omit<Zone, "agentIds">[] = [
   {
     id: "bookstore",
     name: "Bookstore",
@@ -50,7 +11,6 @@ const mockZones: Zone[] = [
     x: 1,
     y: 1,
     capacity: 3,
-    agentIds: ["1"],
   },
   {
     id: "town-hall",
@@ -60,7 +20,6 @@ const mockZones: Zone[] = [
     x: 2,
     y: 1,
     capacity: 5,
-    agentIds: ["2"],
   },
   {
     id: "park",
@@ -70,7 +29,6 @@ const mockZones: Zone[] = [
     x: 0,
     y: 2,
     capacity: 6,
-    agentIds: ["3"],
   },
   {
     id: "cafe",
@@ -80,7 +38,6 @@ const mockZones: Zone[] = [
     x: 1,
     y: 2,
     capacity: 4,
-    agentIds: ["4"],
   },
   {
     id: "library",
@@ -90,7 +47,6 @@ const mockZones: Zone[] = [
     x: 2,
     y: 2,
     capacity: 8,
-    agentIds: [],
   },
   {
     id: "market",
@@ -100,7 +56,6 @@ const mockZones: Zone[] = [
     x: 0,
     y: 0,
     capacity: 10,
-    agentIds: [],
   },
   {
     id: "residential-1",
@@ -110,7 +65,6 @@ const mockZones: Zone[] = [
     x: 0,
     y: 1,
     capacity: 2,
-    agentIds: [],
   },
   {
     id: "residential-2",
@@ -120,7 +74,6 @@ const mockZones: Zone[] = [
     x: 2,
     y: 0,
     capacity: 2,
-    agentIds: [],
   },
   {
     id: "school",
@@ -130,14 +83,13 @@ const mockZones: Zone[] = [
     x: 1,
     y: 0,
     capacity: 15,
-    agentIds: [],
   },
 ];
 
 export const useWorldState = () => {
   const [worldState, setWorldState] = useState<WorldState>({
-    agents: mockAgents,
-    zones: mockZones,
+    agents: [],
+    zones: [],
     conversations: [],
     selectedAgentId: undefined,
     isMemoryPanelOpen: false,
@@ -147,6 +99,75 @@ export const useWorldState = () => {
 
   const [memories, setMemories] = useState<Memory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Helper to build zones from agents' current locations
+  const buildZones = (agents: Agent[]): Zone[] => {
+    console.log("Building zones with agents:", agents);
+
+    const zones = staticZones.map((zone) => ({
+      ...zone,
+      agentIds: agents
+        .filter((a) => a.currentLocation === zone.id)
+        .map((a) => a.id),
+    }));
+
+    console.log("Built zones:", zones);
+    return zones;
+  };
+
+  // Fetch agents from backend
+  const fetchAgents = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/agents");
+      if (!res.ok) {
+        throw new Error(`Failed to fetch agents: ${res.status}`);
+      }
+      const backendAgents = await res.json();
+      console.log("Fetched agents from backend:", backendAgents);
+
+      const agents: Agent[] = backendAgents.map(
+        (backendAgent: any, index: number) => ({
+          id: backendAgent.id,
+          name: backendAgent.name,
+          role: backendAgent.role,
+          backstory: backendAgent.backstory,
+          currentLocation: backendAgent.location, // Map 'location' to 'currentLocation'
+          color: `hsl(${index * 120}, 70%, 50%)`, // Generate colors for agents
+          status: "idle" as const,
+        })
+      );
+
+      console.log("Transformed agents:", agents);
+
+      // Ensure agents have valid data
+      const validAgents = agents.filter(
+        (agent) => agent && agent.id && agent.name && agent.currentLocation
+      );
+
+      console.log("Valid agents:", validAgents);
+
+      setWorldState((prev) => ({
+        ...prev,
+        agents: validAgents,
+        zones: buildZones(validAgents),
+      }));
+    } catch (error) {
+      console.error("Failed to fetch agents:", error);
+      // Set empty state on error
+      setWorldState((prev) => ({
+        ...prev,
+        agents: [],
+        zones: buildZones([]),
+      }));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAgents();
+  }, [fetchAgents]);
 
   const selectAgent = useCallback((agentId: string | undefined) => {
     setWorldState((prev) => ({
@@ -160,115 +181,55 @@ export const useWorldState = () => {
     async (agentId: string, targetZoneId: string) => {
       setIsLoading(true);
       setWorldState((prev) => ({ ...prev, isMoving: true }));
-
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        setWorldState((prev) => {
-          const updatedAgents = prev.agents.map((agent) =>
-            agent.id === agentId
-              ? {
-                  ...agent,
-                  currentLocation: targetZoneId,
-                  status: "moving" as const,
-                }
-              : agent
-          );
-
-          const updatedZones = prev.zones.map((zone) => {
-            if (zone.agentIds.includes(agentId)) {
-              return {
-                ...zone,
-                agentIds: zone.agentIds.filter((id) => id !== agentId),
-              };
-            }
-            if (zone.id === targetZoneId) {
-              return { ...zone, agentIds: [...zone.agentIds, agentId] };
-            }
-            return zone;
-          });
-
-          return {
-            ...prev,
-            agents: updatedAgents,
-            zones: updatedZones,
-            isMoving: false,
-          };
+        const res = await fetch(`/api/move/${agentId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ location: targetZoneId }),
         });
-
-        // Update agent status back to idle after animation
+        if (!res.ok) throw new Error("Failed to move agent");
+        const data = await res.json();
+        // Update agents and zones from backend response
+        await fetchAgents();
         setTimeout(() => {
-          setWorldState((prev) => ({
-            ...prev,
-            agents: prev.agents.map((agent) =>
-              agent.id === agentId ? { ...agent, status: "idle" } : agent
-            ),
-          }));
-        }, 500);
+          setWorldState((prev) => ({ ...prev, isMoving: false }));
+        }, 500); // mimic animation delay
+        return data;
       } catch (error) {
         console.error("Failed to move agent:", error);
         setWorldState((prev) => ({ ...prev, isMoving: false }));
+        throw error;
       } finally {
         setIsLoading(false);
       }
     },
-    []
+    [fetchAgents]
   );
 
-  const fetchAgentMemories = useCallback(
-    async (agentId: string) => {
-      setIsLoading(true);
-      try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        const mockMemories: Memory[] = [
-          {
-            id: "1",
-            agentId,
-            type: "observation",
-            content: "I noticed the weather is particularly nice today.",
-            timestamp: new Date(Date.now() - 1000 * 60 * 30),
-            location:
-              worldState.agents.find((a) => a.id === agentId)
-                ?.currentLocation || "",
-            importance: 3,
-          },
-          {
-            id: "2",
-            agentId,
-            type: "conversation",
-            content:
-              "Had an interesting chat with a visitor about local books.",
-            timestamp: new Date(Date.now() - 1000 * 60 * 60),
-            location:
-              worldState.agents.find((a) => a.id === agentId)
-                ?.currentLocation || "",
-            importance: 7,
-          },
-          {
-            id: "3",
-            agentId,
-            type: "thought",
-            content: "I should reorganize the mystery section soon.",
-            timestamp: new Date(Date.now() - 1000 * 60 * 90),
-            location:
-              worldState.agents.find((a) => a.id === agentId)
-                ?.currentLocation || "",
-            importance: 5,
-          },
-        ];
-
-        setMemories(mockMemories);
-      } catch (error) {
-        console.error("Failed to fetch memories:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [worldState.agents]
-  );
+  const fetchAgentMemories = useCallback(async (agentId: string) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/memory/${agentId}`);
+      if (!res.ok) throw new Error("Failed to fetch memories");
+      const memoriesRaw = await res.json();
+      // Backend does not provide id, location, importance, so we must adapt
+      const memories: Memory[] = (memoriesRaw as any[]).map((m, idx) => ({
+        id: String(idx + 1),
+        agentId,
+        type: m.type || "observation",
+        content: m.content || "",
+        timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
+        location: m.location || "",
+        importance: m.importance || 5,
+      }));
+      setMemories(memories);
+    } catch (error) {
+      console.error("Failed to fetch memories:", error);
+      setMemories([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const closeMemoryPanel = useCallback(() => {
     setWorldState((prev) => ({
@@ -278,6 +239,54 @@ export const useWorldState = () => {
     }));
   }, []);
 
+  // Add a new memory to an agent
+  const addAgentMemory = useCallback(
+    async (agentId: string, memory: { type: string; content: string }) => {
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/memory/${agentId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(memory),
+        });
+        if (!res.ok) throw new Error("Failed to add memory");
+        await fetchAgentMemories(agentId); // Refresh memories
+      } catch (error) {
+        console.error("Failed to add memory:", error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchAgentMemories]
+  );
+
+  // Record a conversation between two agents
+  const recordConversation = useCallback(
+    async (fromId: string, toId: string, content: string) => {
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/conversation`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fromId, toId, content }),
+        });
+        if (!res.ok) throw new Error("Failed to record conversation");
+        // Optionally refresh memories for both agents
+        await Promise.all([
+          fetchAgentMemories(fromId),
+          fetchAgentMemories(toId),
+        ]);
+      } catch (error) {
+        console.error("Failed to record conversation:", error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [fetchAgentMemories]
+  );
+
   return {
     worldState,
     memories,
@@ -286,5 +295,7 @@ export const useWorldState = () => {
     moveAgent,
     fetchAgentMemories,
     closeMemoryPanel,
+    addAgentMemory,
+    recordConversation,
   };
 };
