@@ -21,7 +21,6 @@ describe("AgentAvatar", () => {
         <AgentAvatar agent={mockAgent} showTooltip />
       </TooltipProvider>
     );
-    // Avatar fallback should show first letter
     expect(screen.getByText("T")).toBeInTheDocument();
   });
 });

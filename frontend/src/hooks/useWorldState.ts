@@ -46,7 +46,6 @@ export const useWorldState = () => {
 
   const fetchAgents = useCallback(
     async (preserveSelection = true) => {
-      // Don't fetch if user is interacting or memory panel is open
       if (isUserInteracting.current || memoryPanelOpenRef.current) {
         return;
       }
@@ -131,10 +130,9 @@ export const useWorldState = () => {
       isMemoryPanelOpen: !!agentId,
     }));
 
-    // Clear interaction flag after a longer delay for memory panel
     setTimeout(() => {
       isUserInteracting.current = false;
-    }, 3000); // Increased to 3 seconds for memory panel interactions
+    }, 3000);
   }, []);
 
   const moveAgent = useCallback(
@@ -180,7 +178,6 @@ export const useWorldState = () => {
     [fetchAgents]
   );
 
-  // Completely disable polling when memory panel is open
   useEffect(() => {
     const startPolling = () => {
       if (pollingTimeoutRef.current) {
@@ -188,7 +185,6 @@ export const useWorldState = () => {
       }
 
       pollingTimeoutRef.current = setTimeout(() => {
-        // Only refresh if we have agents, not currently loading, user is not interacting, and memory panel is closed
         if (
           worldState.agents.length > 0 &&
           !isLoading &&
@@ -198,7 +194,7 @@ export const useWorldState = () => {
           fetchAgents();
         }
         startPolling();
-      }, 8000); // Increased to 8 seconds to reduce flickering
+      }, 8000);
 
       return () => {
         if (pollingTimeoutRef.current) {
@@ -246,7 +242,6 @@ export const useWorldState = () => {
       setMemories([]);
     } finally {
       setIsLoading(false);
-      // Don't clear interaction flag for memory operations - keep it blocked
     }
   }, []);
 
@@ -260,7 +255,6 @@ export const useWorldState = () => {
       selectedAgentId: undefined,
     }));
 
-    // Clear interaction flag after a delay
     setTimeout(() => {
       isUserInteracting.current = false;
     }, 2000);
@@ -285,7 +279,6 @@ export const useWorldState = () => {
         throw error;
       } finally {
         setIsLoading(false);
-        // Don't clear interaction flag - keep memory panel stable
       }
     },
     [fetchAgentMemories]
@@ -313,7 +306,6 @@ export const useWorldState = () => {
         throw error;
       } finally {
         setIsLoading(false);
-        // Don't clear interaction flag - keep memory panel stable
       }
     },
     [fetchAgentMemories]

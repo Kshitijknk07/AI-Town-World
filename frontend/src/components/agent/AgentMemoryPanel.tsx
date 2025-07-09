@@ -114,7 +114,6 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
       [memories]
     );
 
-    // Reset destination when memory type changes
     useEffect(() => {
       if (memoryType !== "movement") {
         setMemoryDestination("");
@@ -139,7 +138,6 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
           return;
         }
 
-        // For movement type, require destination
         if (memoryType === "movement" && !memoryDestination) {
           toast({
             title: "Destination required",
@@ -292,7 +290,7 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
                 </Button>
               </div>
 
-              {/* Destination selector for movement */}
+              {}
               {memoryType === "movement" && (
                 <div className="flex gap-2 items-center">
                   <Select
