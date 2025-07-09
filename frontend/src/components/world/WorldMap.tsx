@@ -83,7 +83,10 @@ export const WorldMap: React.FC<WorldMapProps> = React.memo(
     }
 
     return (
-      <div className="flex flex-col lg:flex-row gap-6 p-6 min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+      <div
+        className="flex flex-col lg:flex-row gap-6 p-6 min-h-screen bg-gradient-to-br from-blue-50 to-green-50"
+        data-testid="world-map"
+      >
         {}
         <div className="flex-1">
           <div className="bg-white rounded-xl shadow-lg p-6">
