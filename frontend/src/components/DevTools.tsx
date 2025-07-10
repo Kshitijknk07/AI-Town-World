@@ -21,7 +21,7 @@ const DevTools: React.FC = () => {
   const [newAgentPersonality, setNewAgentPersonality] = useState("");
 
   const handleAddAgent = async () => {
-    if (!newAgentName.trim()) return;
+    if (!newAgentName.trim() || !buildings || buildings.length === 0) return;
     await addAgent({
       name: newAgentName,
       avatar: newAgentAvatar,
@@ -33,7 +33,7 @@ const DevTools: React.FC = () => {
         fears: [],
         interests: [],
       },
-      currentLocation: buildings[0]?.id || "",
+      currentLocation: buildings[0]?.id || "default_location",
       currentGoal: "Explore the town",
     });
     setNewAgentName("");
@@ -43,11 +43,12 @@ const DevTools: React.FC = () => {
   };
 
   const injectRandomEvent = () => {
+    if (!agents || agents.length === 0) return;
     const eventTypes = ["interaction", "thought", "goal_completed"] as const;
     const randomAgent = agents[Math.floor(Math.random() * agents.length)];
+    if (!randomAgent) return;
     const randomType =
       eventTypes[Math.floor(Math.random() * eventTypes.length)];
-
     const event = {
       id: Date.now().toString(),
       timestamp: new Date(),
@@ -58,21 +59,17 @@ const DevTools: React.FC = () => {
       description: `Random ${randomType} event for ${randomAgent.name}`,
       importance: "low" as const,
     };
-
     addEvent(event);
   };
 
   const updateRandomAgentThought = () => {
+    if (!agents || agents.length === 0) return;
     const randomAgent = agents[Math.floor(Math.random() * agents.length)];
-    const thoughts = [
-      "I wonder what's happening today...",
-      "Should I visit the cafe?",
-      "I need to finish my current task.",
-      "What a beautiful day!",
-      "I hope I meet someone interesting.",
-    ];
-    const randomThought = thoughts[Math.floor(Math.random() * thoughts.length)];
-    updateAgentThought(randomAgent.id, randomThought);
+    if (!randomAgent) return;
+    updateAgentThought(
+      randomAgent.id,
+      `Random thought at ${new Date().toLocaleTimeString()}`
+    );
   };
 
   return (
@@ -110,22 +107,17 @@ const DevTools: React.FC = () => {
             Simulation Stats
           </h4>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="bg-soft-gray p-2 rounded">
-              <div className="text-text-secondary">Agents</div>
-              <div className="font-medium">{agents.length}</div>
-            </div>
-            <div className="bg-soft-gray p-2 rounded">
-              <div className="text-text-secondary">Buildings</div>
-              <div className="font-medium">{buildings.length}</div>
-            </div>
-            <div className="bg-soft-gray p-2 rounded">
-              <div className="text-text-secondary">Events</div>
-              <div className="font-medium">{events.length}</div>
-            </div>
-            <div className="bg-soft-gray p-2 rounded">
-              <div className="text-text-secondary">Day</div>
-              <div className="font-medium">{time.day}</div>
-            </div>
+            {[
+              { label: "Agents", value: agents ? agents.length : 0 },
+              { label: "Buildings", value: buildings ? buildings.length : 0 },
+              { label: "Events", value: events ? events.length : 0 },
+              { label: "Day", value: time.day },
+            ].map((stat, idx) => (
+              <div className="bg-soft-gray p-2 rounded" key={stat.label + idx}>
+                <div className="text-text-secondary">{stat.label}</div>
+                <div className="font-medium">{stat.value}</div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -198,7 +190,7 @@ const DevTools: React.FC = () => {
             Agent Status
           </h4>
           <div className="space-y-1 max-h-32 overflow-y-auto">
-            {agents.map((agent) => (
+            {agents?.map((agent) => (
               <div
                 key={agent.id}
                 className="flex items-center justify-between text-xs bg-soft-gray p-2 rounded"
