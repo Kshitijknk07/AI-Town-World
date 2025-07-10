@@ -338,6 +338,7 @@ class AgentThinker {
 
   async getCurrentTime() {
     const result = await query("SELECT * FROM world_state WHERE id = 1");
+    // If you use the result elsewhere, make sure to reference current_sim_time
     return result.rows[0];
   }
 

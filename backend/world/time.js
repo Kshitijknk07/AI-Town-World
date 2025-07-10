@@ -18,7 +18,7 @@ class WorldTime {
       const result = await query("SELECT * FROM world_state WHERE id = 1");
       if (result.rows.length > 0) {
         const worldState = result.rows[0];
-        this.currentTime = new Date(worldState.current_time);
+        this.currentTime = new Date(worldState.current_sim_time);
         this.day = worldState.day;
         this.hour = worldState.hour;
         this.minute = worldState.minute;
@@ -122,7 +122,7 @@ class WorldTime {
     try {
       await query(
         `UPDATE world_state 
-         SET current_time = $1, day = $2, hour = $3, minute = $4, speed = $5, is_running = $6, updated_at = $7 
+         SET current_sim_time = $1, day = $2, hour = $3, minute = $4, speed = $5, is_running = $6, updated_at = $7 
          WHERE id = 1`,
         [
           this.currentTime,

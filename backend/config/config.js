@@ -35,7 +35,8 @@ export const config = {
   },
 
   simulation: {
-    tickInterval: parseInt(process.env.TICK_INTERVAL) || 5000,
+    tickInterval: parseInt(process.env.TICK_INTERVAL) || 1000, // 1 second
+    agentThinkInterval: parseInt(process.env.AGENT_THINK_INTERVAL) || 2000, // 2 seconds
     timeScale: parseInt(process.env.TIME_SCALE) || 1,
     maxAgents: parseInt(process.env.MAX_AGENTS) || 10,
     memoryRetentionDays: parseInt(process.env.MEMORY_RETENTION_DAYS) || 30,

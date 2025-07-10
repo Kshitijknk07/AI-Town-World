@@ -9,6 +9,8 @@ import BottomPanel from "./components/BottomPanel";
 import AgentCard from "./components/AgentCard";
 import MemoryViewer from "./components/MemoryViewer";
 import DevTools from "./components/DevTools";
+import TutorialModal from "./components/TutorialModal";
+import { useState } from "react";
 
 function App() {
   const { isRunning, selectedAgentId, agents, ui, advanceTime } =
@@ -25,24 +27,32 @@ function App() {
   }, [isRunning, advanceTime]);
 
   const selectedAgent = agents.find((agent) => agent.id === selectedAgentId);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
-      {}
+      {/* Help Button */}
+      <button
+        className="fixed bottom-6 right-6 z-50 bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg hover:bg-blue-700 focus:outline-none"
+        onClick={() => setShowTutorial(true)}
+        title="Show Tutorial"
+        aria-label="Show Tutorial"
+      >
+        ?
+      </button>
+      <TutorialModal
+        open={showTutorial}
+        onClose={() => setShowTutorial(false)}
+      />
       <Header />
 
-      {}
       <div className="flex-1 flex overflow-hidden">
-        {}
         <Sidebar />
 
-        {}
         <div className="flex-1 flex flex-col">
-          {}
           <div className="flex-1 relative">
             <TownMap />
 
-            {}
             {selectedAgent && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -55,15 +65,12 @@ function App() {
             )}
           </div>
 
-          {}
           <TimeControls />
         </div>
       </div>
 
-      {}
       <BottomPanel />
 
-      {}
       {ui.showMemoryViewer && <MemoryViewer />}
       {ui.showDevTools && <DevTools />}
     </div>

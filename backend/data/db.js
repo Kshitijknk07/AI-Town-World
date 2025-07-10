@@ -126,7 +126,7 @@ export const initializeDatabase = async () => {
     await query(`
       CREATE TABLE IF NOT EXISTS world_state (
         id INTEGER PRIMARY KEY DEFAULT 1,
-        current_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        current_sim_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         day INTEGER DEFAULT 1,
         hour INTEGER DEFAULT 0,
         minute INTEGER DEFAULT 0,
@@ -137,7 +137,7 @@ export const initializeDatabase = async () => {
     `);
 
     await query(`
-      INSERT INTO world_state (id, current_time, day, hour, minute, speed, is_running)
+      INSERT INTO world_state (id, current_sim_time, day, hour, minute, speed, is_running)
       VALUES (1, CURRENT_TIMESTAMP, 1, 10, 30, 'normal', true)
       ON CONFLICT (id) DO NOTHING
     `);
