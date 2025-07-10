@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: "Inter", system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-text-primary;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-white/80 backdrop-blur-sm border border-border-light/50;
+  }
+
+  .agent-avatar {
+    @apply w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-sm font-medium text-primary;
+  }
+
+  .building-tile {
+    @apply w-12 h-12 rounded-lg bg-agent-tile border-2 border-white shadow-soft flex items-center justify-center;
+  }
+
+  .time-control {
+    @apply bg-time-controls text-white px-4 py-2 rounded-xl font-medium hover:bg-time-controls/90 transition-colors;
+  }
+
+  .chat-bubble {
+    @apply bg-chat-panel border border-border-light rounded-2xl p-3 shadow-soft;
+  }
+
+  .memory-item {
+    @apply bg-soft-gray border-l-4 border-primary/30 p-3 rounded-r-lg;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
