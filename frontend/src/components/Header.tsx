@@ -5,7 +5,12 @@ import { useSimulationStore } from "../store/simulationStore";
 import { formatTime, formatDate } from "../utils";
 
 const Header: React.FC = () => {
-  const { time, ui, toggleDevTools, toggleMemoryViewer } = useSimulationStore();
+  const time = useSimulationStore((state) => state.time);
+  const ui = useSimulationStore((state) => state.ui);
+  const toggleDevTools = useSimulationStore((state) => state.toggleDevTools);
+  const toggleMemoryViewer = useSimulationStore(
+    (state) => state.toggleMemoryViewer
+  );
 
   return (
     <motion.header

@@ -8,13 +8,16 @@ const ChatWindow: React.FC = () => {
   const { selectedAgentId, agents, chatMessages, addChatMessage } =
     useSimulationStore();
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const selectedAgent = agents.find((agent) => agent.id === selectedAgentId);
   const messages = selectedAgentId ? chatMessages[selectedAgentId] || [] : [];
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!message.trim() || !selectedAgentId) return;
-
+    setLoading(true);
+    setError(null);
     const newMessage = {
       id: Date.now().toString(),
       timestamp: new Date(),
@@ -23,21 +26,39 @@ const ChatWindow: React.FC = () => {
       content: message.trim(),
       type: "user" as const,
     };
-
     addChatMessage(selectedAgentId, newMessage);
     setMessage("");
-
-    setTimeout(() => {
+    try {
+      const res = await fetch(`/api/agents/${selectedAgentId}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: newMessage.content }),
+      });
+      if (!res.ok) throw new Error("Failed to get agent response");
+      const data = await res.json();
       const response = {
         id: (Date.now() + 1).toString(),
         timestamp: new Date(),
         agentId: selectedAgentId,
         agentName: selectedAgent?.name || "Unknown",
-        content: `Thanks for your message! I'm currently ${selectedAgent?.currentGoal.toLowerCase()}.`,
+        content: data.message || "(No response)",
         type: "agent" as const,
       };
       addChatMessage(selectedAgentId, response);
-    }, 1000);
+    } catch (err) {
+      setError("Could not get agent response. Please try again.");
+      const errorMsg = {
+        id: (Date.now() + 2).toString(),
+        timestamp: new Date(),
+        agentId: selectedAgentId,
+        agentName: selectedAgent?.name || "Unknown",
+        content: "[Error: Could not get agent response]",
+        type: "agent" as const,
+      };
+      addChatMessage(selectedAgentId, errorMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!selectedAgent) {
@@ -70,6 +91,13 @@ const ChatWindow: React.FC = () => {
 
       {}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {loading && (
+          <div className="text-center text-primary py-2 animate-pulse">
+            <span className="inline-block w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin align-middle mr-2" />
+            Waiting for agent response...
+          </div>
+        )}
+        {error && <div className="text-center text-red-500 py-2">{error}</div>}
         {messages.length === 0 ? (
           <div className="text-center text-text-secondary py-8">
             <div className="text-4xl mb-2">💬</div>
@@ -124,12 +152,13 @@ const ChatWindow: React.FC = () => {
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
             placeholder={`Message ${selectedAgent.name}...`}
             className="flex-1 px-3 py-2 border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+            disabled={loading}
           />
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleSendMessage}
-            disabled={!message.trim()}
+            disabled={!message.trim() || loading}
             className="p-2 bg-primary text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="w-4 h-4" />

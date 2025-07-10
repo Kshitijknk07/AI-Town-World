@@ -38,6 +38,43 @@
   .memory-item {
     @apply bg-soft-gray border-l-4 border-primary/30 p-3 rounded-r-lg;
   }
+
+  /* Mobile responsiveness tweaks */
+  @media (max-width: 640px) {
+    .sidebar {
+      @apply w-full h-auto border-r-0 border-b border-border-light/50 flex-row flex-wrap;
+    }
+    .bottom-panel, .mobile-bottom-panel {
+      @apply w-full h-72 fixed bottom-0 left-0 right-0 z-40 rounded-t-2xl border-t border-border-light/50 shadow-medium bg-white/95;
+    }
+    .glass-panel, .agent-card, .memory-viewer, .dev-tools {
+      @apply rounded-none shadow-none border-0;
+    }
+    .agent-avatar {
+      @apply w-12 h-12 text-lg;
+    }
+    .chat-bubble {
+      @apply text-base px-4 py-3;
+    }
+    .time-control {
+      @apply px-2 py-2 text-base;
+    }
+    .header {
+      @apply flex-col items-start px-2 py-2;
+    }
+    .mobile-hide {
+      display: none !important;
+    }
+    .mobile-show {
+      display: block !important;
+    }
+    .tab-button {
+      @apply text-base px-2 py-2;
+    }
+    .tutorial-modal {
+      @apply max-w-full w-full rounded-none p-2;
+    }
+  }
 }
 
 @layer utilities {

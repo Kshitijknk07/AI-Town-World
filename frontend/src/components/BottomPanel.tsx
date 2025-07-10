@@ -1,10 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Activity, MessageCircle, User } from "lucide-react";
+import { Activity, MessageCircle, User, Users } from "lucide-react";
 import { useSimulationStore } from "../store/simulationStore";
 import EventLog from "./EventLog";
 import ChatWindow from "./ChatWindow";
 import AgentInfo from "./AgentInfo";
+import { RelationshipGraph } from "./RelationshipGraph";
 
 const BottomPanel: React.FC = () => {
   const { ui, setActiveTab } = useSimulationStore();
@@ -13,6 +14,7 @@ const BottomPanel: React.FC = () => {
     { id: "events", label: "Events", icon: Activity },
     { id: "chat", label: "Chat", icon: MessageCircle },
     { id: "agent-info", label: "Agent Info", icon: User },
+    { id: "relationships", label: "Relationships", icon: Users },
   ];
 
   return (
@@ -51,6 +53,7 @@ const BottomPanel: React.FC = () => {
         {ui.activeTab === "events" && <EventLog />}
         {ui.activeTab === "chat" && <ChatWindow />}
         {ui.activeTab === "agent-info" && <AgentInfo />}
+        {ui.activeTab === "relationships" && <RelationshipGraph />}
       </div>
     </motion.div>
   );

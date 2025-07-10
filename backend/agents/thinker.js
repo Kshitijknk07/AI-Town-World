@@ -31,8 +31,23 @@ class AgentThinker {
 
       await this.executeAction(agent, action);
 
+      const newEnergy = Math.max(0, (agent.energy || 0) - 1);
+
+      const recentMemories = await this.getRecentMemories(agentId, 5);
+      let newMood = agent.mood || 0;
+      if (recentMemories.length > 0) {
+        const avgImpact =
+          recentMemories.reduce(
+            (sum, m) => sum + (m.emotional_impact || 0),
+            0
+          ) / recentMemories.length;
+        newMood = Math.max(-1, Math.min(1, avgImpact));
+      }
+
       await this.updateAgentState(agentId, {
         current_thought: newThought,
+        energy: newEnergy,
+        mood: newMood,
         updated_at: new Date(),
       });
 
@@ -55,6 +70,8 @@ class AgentThinker {
         agentName: agent.name,
         thought: newThought.substring(0, 100),
         action: action.type,
+        energy: newEnergy,
+        mood: newMood,
       });
     } catch (error) {
       logger.error("Agent thinking failed", { agentId, error: error.message });
@@ -338,7 +355,6 @@ class AgentThinker {
 
   async getCurrentTime() {
     const result = await query("SELECT * FROM world_state WHERE id = 1");
-    // If you use the result elsewhere, make sure to reference current_sim_time
     return result.rows[0];
   }
 

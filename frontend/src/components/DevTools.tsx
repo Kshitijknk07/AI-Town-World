@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { X, Settings, Zap, Brain } from "lucide-react";
 import { useSimulationStore } from "../store/simulationStore";
@@ -12,7 +12,35 @@ const DevTools: React.FC = () => {
     toggleDevTools,
     updateAgentThought,
     addEvent,
+    addAgent,
+    fetchAgents,
   } = useSimulationStore();
+
+  const [newAgentName, setNewAgentName] = useState("");
+  const [newAgentAvatar, setNewAgentAvatar] = useState("👤");
+  const [newAgentPersonality, setNewAgentPersonality] = useState("");
+
+  const handleAddAgent = async () => {
+    if (!newAgentName.trim()) return;
+    await addAgent({
+      name: newAgentName,
+      avatar: newAgentAvatar,
+      personality: {
+        traits: newAgentPersonality
+          ? newAgentPersonality.split(",").map((t) => t.trim())
+          : [],
+        goals: [],
+        fears: [],
+        interests: [],
+      },
+      currentLocation: buildings[0]?.id || "",
+      currentGoal: "Explore the town",
+    });
+    setNewAgentName("");
+    setNewAgentAvatar("👤");
+    setNewAgentPersonality("");
+    fetchAgents();
+  };
 
   const injectRandomEvent = () => {
     const eventTypes = ["interaction", "thought", "goal_completed"] as const;
@@ -126,6 +154,41 @@ const DevTools: React.FC = () => {
               <Brain className="w-4 h-4 inline mr-2" />
               Update Random Thought
             </motion.button>
+
+            {}
+            <div className="space-y-2 bg-soft-gray p-3 rounded-lg mt-4">
+              <div className="text-xs font-semibold text-text-primary mb-1">
+                Add New Agent
+              </div>
+              <input
+                type="text"
+                placeholder="Name"
+                value={newAgentName}
+                onChange={(e) => setNewAgentName(e.target.value)}
+                className="w-full px-2 py-1 border border-border-light rounded mb-1 text-sm"
+              />
+              <input
+                type="text"
+                placeholder="Avatar (emoji)"
+                value={newAgentAvatar}
+                onChange={(e) => setNewAgentAvatar(e.target.value)}
+                className="w-full px-2 py-1 border border-border-light rounded mb-1 text-sm"
+              />
+              <input
+                type="text"
+                placeholder="Personality traits (comma separated)"
+                value={newAgentPersonality}
+                onChange={(e) => setNewAgentPersonality(e.target.value)}
+                className="w-full px-2 py-1 border border-border-light rounded mb-2 text-sm"
+              />
+              <button
+                onClick={handleAddAgent}
+                className="w-full p-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                disabled={!newAgentName.trim()}
+              >
+                Add Agent
+              </button>
+            </div>
           </div>
         </div>
 

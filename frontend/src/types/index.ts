@@ -97,6 +97,7 @@ export interface SimulationTime {
 }
 
 export interface SimulationState {
+  updateTime: any;
   isRunning: boolean;
   time: SimulationTime;
   agents: Agent[];
@@ -107,9 +108,12 @@ export interface SimulationState {
   ui: {
     showMemoryViewer: boolean;
     showDevTools: boolean;
-    activeTab: "events" | "chat" | "agent-info";
+    activeTab: "events" | "chat" | "agent-info" | "relationships";
   };
-
+  fetchAgents: () => Promise<void>;
+  addAgent: (agentData: Partial<Agent>) => Promise<void>;
+  updateAgent: (id: string, updates: Partial<Agent>) => Promise<void>;
+  deleteAgent: (id: string) => Promise<void>;
   setSelectedAgent: (agentId: string | null) => void;
   updateAgentLocation: (agentId: string, newLocation: string) => void;
   addEvent: (event: Event) => void;
@@ -121,6 +125,13 @@ export interface SimulationState {
   setActiveTab: (tab: "events" | "chat" | "agent-info") => void;
   updateAgentThought: (agentId: string, thought: string) => void;
   updateAgentGoal: (agentId: string, goal: string) => void;
+  addMemory: (agentId: string, memory: Memory) => void;
+  updateRelationship: (
+    agent1: string,
+    agent2: string,
+    relationship: string,
+    strength: number
+  ) => void;
 }
 
 export interface UIPanel {

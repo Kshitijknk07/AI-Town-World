@@ -3,6 +3,20 @@ import { motion } from "framer-motion";
 import { Play, Pause, FastForward, RotateCcw } from "lucide-react";
 import { useSimulationStore } from "../store/simulationStore";
 
+const timePresets = [
+  { label: "Morning", hour: 8, minute: 0 },
+  { label: "Afternoon", hour: 14, minute: 0 },
+  { label: "Night", hour: 22, minute: 0 },
+];
+
+function setTimeOfDay(hour: number, minute: number) {
+  fetch("/api/world/set-time", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ hour, minute }),
+  });
+}
+
 const TimeControls: React.FC = () => {
   const { time, isRunning, setSimulationSpeed } = useSimulationStore();
 
@@ -19,6 +33,18 @@ const TimeControls: React.FC = () => {
       animate={{ y: 0, opacity: 1 }}
       className="bg-white/90 backdrop-blur-sm border-t border-border-light/50 px-6 py-4"
     >
+      {}
+      <div className="flex gap-2 mb-2">
+        {timePresets.map((preset) => (
+          <button
+            key={preset.label}
+            className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+            onClick={() => setTimeOfDay(preset.hour, preset.minute)}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
       <div className="flex items-center justify-between">
         {}
         <div className="flex items-center space-x-2">
