@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Agent, Zone, Memory, WorldState } from "@/types/agent";
 
+const API_BASE_URL = "/api";
+
 export const useWorldState = () => {
   const [worldState, setWorldState] = useState<WorldState>({
     agents: [],
@@ -31,12 +33,11 @@ export const useWorldState = () => {
 
   const fetchZones = useCallback(async () => {
     try {
-      const res = await fetch("/api/zones");
+      const res = await fetch(`${API_BASE_URL}/zones`);
       if (!res.ok) {
         throw new Error(`Failed to fetch zones: ${res.status}`);
       }
       const zones: Zone[] = await res.json();
-      console.log("Fetched zones from backend:", zones);
       return zones;
     } catch (error) {
       console.error("Failed to fetch zones:", error);
@@ -50,13 +51,18 @@ export const useWorldState = () => {
         return;
       }
 
-      setIsLoading(true);
       try {
-        const res = await fetch("/api/agents");
+        const res = await fetch(`${API_BASE_URL}/agents`);
         if (!res.ok) {
           throw new Error(`Failed to fetch agents: ${res.status}`);
         }
         const backendAgents = await res.json();
+        
+        const agentColors = [
+          "#8B5CF6", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", 
+          "#3B82F6", "#8B5A2B", "#EC4899", "#6366F1", "#14B8A6"
+        ];
+        
         const agents: Agent[] = backendAgents.map(
           (backendAgent: any, index: number) => ({
             id: backendAgent.id,
@@ -64,13 +70,15 @@ export const useWorldState = () => {
             role: backendAgent.role,
             backstory: backendAgent.backstory,
             currentLocation: backendAgent.location,
-            color: `hsl(${index * 120}, 70%, 50%)`,
+            color: agentColors[index % agentColors.length],
             status: backendAgent.status || "idle",
           })
         );
+        
         const validAgents = agents.filter(
           (agent) => agent && agent.id && agent.name && agent.currentLocation
         );
+        
         const zones = await fetchZones();
         const zonesWithAgents = buildZonesWithAgents(zones, validAgents);
 
@@ -109,8 +117,6 @@ export const useWorldState = () => {
             ? prev.isMemoryPanelOpen
             : prev.isMemoryPanelOpen,
         }));
-      } finally {
-        setIsLoading(false);
       }
     },
     [fetchZones]
@@ -141,15 +147,16 @@ export const useWorldState = () => {
 
       setIsLoading(true);
       setWorldState((prev) => ({ ...prev, isMoving: true }));
+      
       try {
-        const res = await fetch(`/api/move/${agentId}`, {
+        const res = await fetch(`${API_BASE_URL}/move/${agentId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ location: targetZoneId }),
         });
+        
         if (!res.ok) throw new Error("Failed to move agent");
-        const data = await res.json();
-
+        
         setWorldState((prev) => ({
           ...prev,
           agents: prev.agents.map((agent) =>
@@ -163,9 +170,8 @@ export const useWorldState = () => {
           await fetchAgents(false);
           setWorldState((prev) => ({ ...prev, isMoving: false }));
           isUserInteracting.current = false;
-        }, 1000);
+        }, 1500);
 
-        return data;
       } catch (error) {
         console.error("Failed to move agent:", error);
         setWorldState((prev) => ({ ...prev, isMoving: false }));
@@ -194,13 +200,7 @@ export const useWorldState = () => {
           fetchAgents();
         }
         startPolling();
-      }, 8000);
-
-      return () => {
-        if (pollingTimeoutRef.current) {
-          clearTimeout(pollingTimeoutRef.current);
-        }
-      };
+      }, 10000);
     };
 
     startPolling();
@@ -224,7 +224,7 @@ export const useWorldState = () => {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/memory/${agentId}`);
+      const res = await fetch(`${API_BASE_URL}/memory/${agentId}`);
       if (!res.ok) throw new Error("Failed to fetch memories");
       const memoriesRaw = await res.json();
       const memories: Memory[] = (memoriesRaw as any[]).map((m, idx) => ({
@@ -267,7 +267,7 @@ export const useWorldState = () => {
 
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/memory/${agentId}`, {
+        const res = await fetch(`${API_BASE_URL}/memory/${agentId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(memory),
@@ -291,7 +291,7 @@ export const useWorldState = () => {
 
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/conversation`, {
+        const res = await fetch(`${API_BASE_URL}/conversation`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fromId, toId, content }),

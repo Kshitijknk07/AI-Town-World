@@ -18,6 +18,9 @@ import {
   Lightbulb,
   MapPin,
   Clock,
+  Sparkles,
+  Heart,
+  Zap,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useWorldState } from "@/hooks/useWorldState";
@@ -31,6 +34,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface AgentMemoryPanelProps {
   agent: Agent | undefined;
@@ -43,42 +48,42 @@ interface AgentMemoryPanelProps {
 }
 
 const memoryTypeIcons = {
-  observation: <Eye className="w-4 h-4" />,
-  conversation: <MessageCircle className="w-4 h-4" />,
-  movement: <MapPin className="w-4 h-4" />,
-  thought: <Lightbulb className="w-4 h-4" />,
+  observation: <Eye className="w-4 h-4 text-blue-500" />,
+  conversation: <MessageCircle className="w-4 h-4 text-green-500" />,
+  movement: <MapPin className="w-4 h-4 text-purple-500" />,
+  thought: <Lightbulb className="w-4 h-4 text-yellow-500" />,
 };
 
 const memoryTypeLabels = {
-  observation: "Saw something",
-  conversation: "Talked to someone",
+  observation: "Observed something",
+  conversation: "Had a conversation",
   movement: "Moved somewhere",
-  thought: "Had an idea",
+  thought: "Had a thought",
 };
 
 const importanceColors = {
-  1: "bg-gray-100",
-  2: "bg-gray-100",
-  3: "bg-blue-100",
-  4: "bg-blue-100",
-  5: "bg-yellow-100",
-  6: "bg-yellow-100",
-  7: "bg-orange-100",
-  8: "bg-orange-100",
-  9: "bg-red-100",
-  10: "bg-red-100",
+  1: "bg-gray-50 border-gray-200",
+  2: "bg-gray-50 border-gray-200",
+  3: "bg-blue-50 border-blue-200",
+  4: "bg-blue-50 border-blue-200",
+  5: "bg-yellow-50 border-yellow-200",
+  6: "bg-yellow-50 border-yellow-200",
+  7: "bg-orange-50 border-orange-200",
+  8: "bg-orange-50 border-orange-200",
+  9: "bg-red-50 border-red-200",
+  10: "bg-red-50 border-red-200",
 };
 
 const availableZones = [
+  "bookstore",
+  "town-hall",
+  "school", 
   "residential-1",
+  "cafe",
   "residential-2",
-  "commercial-1",
-  "commercial-2",
-  "park-1",
-  "park-2",
-  "civic-1",
-  "civic-2",
-  "special-1",
+  "park",
+  "library",
+  "market",
 ];
 
 export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
@@ -162,7 +167,7 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
           });
           toast({
             title: "Memory added",
-            description: "A new memory was added.",
+            description: "A new memory was created.",
           });
           setMemoryContent("");
           setMemoryDestination("");
@@ -195,7 +200,7 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
           await recordConversation(agent.id, talkToId, talkContent);
           toast({
             title: "Conversation recorded",
-            description: "Message sent to agent.",
+            description: "Message sent successfully.",
           });
           setTalkContent("");
         } catch (err) {
@@ -215,255 +220,322 @@ export const AgentMemoryPanel: React.FC<AgentMemoryPanelProps> = React.memo(
 
     return (
       <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent className="w-[400px] sm:w-[540px] overflow-hidden">
-          <SheetHeader className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                  style={{ backgroundColor: agent.color }}
+        <SheetContent className="w-[500px] sm:w-[600px] overflow-hidden glass-effect border-white/30">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <SheetHeader className="space-y-4 pb-6">
+              <div className="flex items-center gap-4">
+                <motion.div 
+                  className="relative"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 400 }}
                 >
-                  {agent.name.charAt(0)}
-                </div>
-                {}
-                <div
-                  className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                    agent.status === "idle"
-                      ? "bg-green-400"
-                      : agent.status === "moving"
-                      ? "bg-blue-400"
-                      : agent.status === "talking"
-                      ? "bg-yellow-400"
-                      : "bg-purple-400"
-                  }`}
-                />
-              </div>
-              <div>
-                <SheetTitle className="text-xl">{agent.name}</SheetTitle>
-                <SheetDescription className="text-base">
-                  {agent.role} •{" "}
-                  <span className="capitalize">{agent.status}</span>
-                </SheetDescription>
-              </div>
-            </div>
-
-            <Card className="bg-gradient-to-r from-blue-50 to-purple-50">
-              <CardContent className="p-4">
-                <p className="text-sm text-gray-700 italic">
-                  "{agent.backstory}"
-                </p>
-              </CardContent>
-            </Card>
-          </SheetHeader>
-
-          <Separator className="my-4" />
-
-          <div className="space-y-4 flex-1">
-            {}
-            <form
-              onSubmit={handleAddMemory}
-              className="flex flex-col gap-2 mb-4"
-            >
-              <div className="flex gap-2 items-center">
-                <Select value={memoryType} onValueChange={setMemoryType}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="observation">Saw something</SelectItem>
-                    <SelectItem value="conversation">
-                      Talked to someone
-                    </SelectItem>
-                    <SelectItem value="movement">Moved somewhere</SelectItem>
-                    <SelectItem value="thought">Had an idea</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="submit"
-                  disabled={
-                    adding ||
-                    !memoryContent.trim() ||
-                    (memoryType === "movement" && !memoryDestination)
-                  }
-                >
-                  {adding ? "Adding..." : "Add Memory"}
-                </Button>
-              </div>
-
-              {}
-              {memoryType === "movement" && (
-                <div className="flex gap-2 items-center">
-                  <Select
-                    value={memoryDestination}
-                    onValueChange={setMemoryDestination}
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-xl"
+                    style={{ backgroundColor: agent.color }}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select destination..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableZones.map((zoneId) => (
-                        <SelectItem key={zoneId} value={zoneId}>
-                          {zoneId
-                            .replace("-", " ")
-                            .replace(/\b\w/g, (l) => l.toUpperCase())}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {agent.name.charAt(0)}
+                  </div>
+                  <motion.div
+                    className={cn(
+                      "absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white shadow-sm",
+                      agent.status === "idle"
+                        ? "bg-emerald-400"
+                        : agent.status === "moving"
+                        ? "bg-blue-400"
+                        : agent.status === "talking"
+                        ? "bg-yellow-400"
+                        : "bg-purple-400"
+                    )}
+                    animate={agent.status === "moving" ? { scale: [1, 1.2, 1] } : {}}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  />
+                </motion.div>
+                <div className="flex-1">
+                  <SheetTitle className="text-2xl font-bold text-gray-800">
+                    {agent.name}
+                  </SheetTitle>
+                  <SheetDescription className="text-lg text-indigo-600 font-medium">
+                    {agent.role} • <span className="capitalize">{agent.status}</span>
+                  </SheetDescription>
                 </div>
-              )}
-
-              <Textarea
-                value={memoryContent}
-                onChange={(e) => setMemoryContent(e.target.value)}
-                placeholder={
-                  memoryType === "movement"
-                    ? "What happened during the move? (e.g., 'Walked through the park')"
-                    : memoryType === "observation"
-                    ? "What happened? (e.g., 'Saw a beautiful sunset at the park')"
-                    : memoryType === "conversation"
-                    ? "What was said? (e.g., 'Had a great chat about the weather')"
-                    : "What idea did you have? (e.g., 'Thought about building a new machine')"
-                }
-                rows={2}
-                className="resize-none"
-                disabled={adding}
-              />
-            </form>
-
-            {}
-            <form
-              onSubmit={handleTalkSubmit}
-              className="flex flex-col gap-2 mb-4"
-            >
-              <div className="flex gap-2 items-center">
-                <Select value={talkToId} onValueChange={setTalkToId}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Talk to..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {otherAgents.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {a.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="submit"
-                  disabled={talking || !talkToId || !talkContent.trim()}
-                >
-                  {talking ? "Sending..." : "Talk"}
-                </Button>
               </div>
-              <Textarea
-                value={talkContent}
-                onChange={(e) => setTalkContent(e.target.value)}
-                placeholder="What do you want to say? (e.g., 'Hello! How are you today?')"
-                rows={2}
-                className="resize-none"
-                disabled={talking}
-              />
-            </form>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Brain className="w-5 h-5" />
-                Memory Log
-              </h3>
-              <Badge variant="secondary">{memories.length} memories</Badge>
-            </div>
 
-            <ScrollArea className="h-[calc(100vh-400px)]">
-              {isLoading ? (
-                <div className="space-y-3">
-                  {[...Array(3)].map((_, i) => (
-                    <Card key={i} className="animate-pulse">
-                      <CardContent className="p-4">
-                        <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                        <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : memories.length === 0 ? (
-                <Card>
-                  <CardContent className="p-6 text-center">
-                    <Brain className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-                    <p className="text-gray-500">
-                      No memories found for this agent.
-                    </p>
-                    <p className="text-sm text-gray-400 mt-2">
-                      Add memories using the form above!
-                    </p>
+              <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200">
+                <CardContent className="p-4">
+                  <p className="text-sm text-gray-700 italic leading-relaxed">
+                    "{agent.backstory}"
+                  </p>
+                </CardContent>
+              </Card>
+            </SheetHeader>
+
+            <Separator className="my-6 bg-white/30" />
+
+            <div className="space-y-6 flex-1">
+              {/* Add Memory Form */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Card className="glass-effect border-white/50">
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-purple-500" />
+                      Create New Memory
+                    </h3>
+                    <form onSubmit={handleAddMemory} className="space-y-3">
+                      <div className="flex gap-2 items-center">
+                        <Select value={memoryType} onValueChange={setMemoryType}>
+                          <SelectTrigger className="w-48 glass-effect border-white/50">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="glass-effect">
+                            <SelectItem value="observation">Observed something</SelectItem>
+                            <SelectItem value="conversation">Had conversation</SelectItem>
+                            <SelectItem value="movement">Moved somewhere</SelectItem>
+                            <SelectItem value="thought">Had a thought</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="submit"
+                          disabled={
+                            adding ||
+                            !memoryContent.trim() ||
+                            (memoryType === "movement" && !memoryDestination)
+                          }
+                          className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600"
+                        >
+                          {adding ? "Adding..." : "Add Memory"}
+                        </Button>
+                      </div>
+
+                      {memoryType === "movement" && (
+                        <Select
+                          value={memoryDestination}
+                          onValueChange={setMemoryDestination}
+                        >
+                          <SelectTrigger className="glass-effect border-white/50">
+                            <SelectValue placeholder="Select destination..." />
+                          </SelectTrigger>
+                          <SelectContent className="glass-effect">
+                            {availableZones.map((zoneId) => (
+                              <SelectItem key={zoneId} value={zoneId}>
+                                {zoneId
+                                  .replace("-", " ")
+                                  .replace(/\b\w/g, (l) => l.toUpperCase())}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      <Textarea
+                        value={memoryContent}
+                        onChange={(e) => setMemoryContent(e.target.value)}
+                        placeholder={
+                          memoryType === "movement"
+                            ? "What happened during the move? (e.g., 'Walked through the peaceful gardens')"
+                            : memoryType === "observation"
+                            ? "What did you observe? (e.g., 'Saw a beautiful sunset painting the sky')"
+                            : memoryType === "conversation"
+                            ? "What was discussed? (e.g., 'Had an inspiring chat about art')"
+                            : "What thought occurred? (e.g., 'Wondered about the nature of creativity')"
+                        }
+                        rows={3}
+                        className="resize-none glass-effect border-white/50"
+                        disabled={adding}
+                      />
+                    </form>
                   </CardContent>
                 </Card>
-              ) : (
-                <div className="space-y-3">
-                  {sortedMemories.map((memory) => (
-                    <Card
-                      key={memory.id}
-                      className={`transition-all duration-200 hover:shadow-md ${
-                        importanceColors[
-                          memory.importance as keyof typeof importanceColors
-                        ] || "bg-gray-50"
-                      }`}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 mt-1">
-                            {memoryTypeIcons[memory.type]}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-2">
-                              <Badge
-                                variant="outline"
-                                className="text-xs capitalize"
-                              >
-                                {memoryTypeLabels[memory.type] || memory.type}
-                              </Badge>
-                              <span className="text-xs text-gray-500 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {formatDistanceToNow(
-                                  new Date(memory.timestamp),
-                                  { addSuffix: true }
-                                )}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-800 leading-relaxed">
-                              {memory.content}
-                            </p>
-                            <div className="flex items-center justify-between mt-2">
-                              <span className="text-xs text-gray-500 flex items-center gap-1">
-                                <MapPin className="w-3 h-3" />
-                                {memory.location || "Unknown location"}
-                              </span>
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs text-gray-500">
-                                  Importance:
-                                </span>
-                                <div className="flex">
-                                  {[...Array(10)].map((_, i) => (
-                                    <div
-                                      key={i}
-                                      className={`w-1.5 h-1.5 rounded-full mx-0.5 ${
-                                        i < memory.importance
-                                          ? "bg-yellow-400"
-                                          : "bg-gray-200"
-                                      }`}
-                                    />
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+              </motion.div>
+
+              {/* Conversation Form */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Card className="glass-effect border-white/50">
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <MessageCircle className="w-4 h-4 text-green-500" />
+                      Start Conversation
+                    </h3>
+                    <form onSubmit={handleTalkSubmit} className="space-y-3">
+                      <div className="flex gap-2 items-center">
+                        <Select value={talkToId} onValueChange={setTalkToId}>
+                          <SelectTrigger className="w-48 glass-effect border-white/50">
+                            <SelectValue placeholder="Talk to..." />
+                          </SelectTrigger>
+                          <SelectContent className="glass-effect">
+                            {otherAgents.map((a) => (
+                              <SelectItem key={a.id} value={a.id}>
+                                {a.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="submit"
+                          disabled={talking || !talkToId || !talkContent.trim()}
+                          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                        >
+                          {talking ? "Sending..." : "Send Message"}
+                        </Button>
+                      </div>
+                      <Textarea
+                        value={talkContent}
+                        onChange={(e) => setTalkContent(e.target.value)}
+                        placeholder="What would you like to say? (e.g., 'Hello! How has your day been?')"
+                        rows={2}
+                        className="resize-none glass-effect border-white/50"
+                        disabled={talking}
+                      />
+                    </form>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Memory Log */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold flex items-center gap-3 text-gray-800">
+                    <Brain className="w-6 h-6 text-purple-500" />
+                    Memory Archive
+                  </h3>
+                  <Badge variant="secondary" className="bg-white/80">
+                    {memories.length} memories
+                  </Badge>
+                </div>
+
+                <ScrollArea className="h-[calc(100vh-600px)] pr-4">
+                  {isLoading ? (
+                    <div className="space-y-4">
+                      {[...Array(3)].map((_, i) => (
+                        <Card key={i} className="animate-pulse glass-effect">
+                          <CardContent className="p-4">
+                            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : memories.length === 0 ? (
+                    <Card className="glass-effect border-white/50">
+                      <CardContent className="p-8 text-center">
+                        <motion.div
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ delay: 0.2 }}
+                        >
+                          <Brain className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                          <p className="text-gray-500 text-lg font-medium">
+                            No memories yet
+                          </p>
+                          <p className="text-sm text-gray-400 mt-2">
+                            Create the first memory using the form above!
+                          </p>
+                        </motion.div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <AnimatePresence>
+                        {sortedMemories.map((memory, index) => (
+                          <motion.div
+                            key={memory.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ delay: index * 0.05 }}
+                          >
+                            <Card
+                              className={cn(
+                                "transition-all duration-300 hover:shadow-lg hover:scale-[1.02] glass-effect border-white/50",
+                                importanceColors[
+                                  memory.importance as keyof typeof importanceColors
+                                ] || "bg-gray-50 border-gray-200"
+                              )}
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex items-start gap-3">
+                                  <motion.div 
+                                    className="flex-shrink-0 mt-1"
+                                    whileHover={{ scale: 1.2, rotate: 10 }}
+                                    transition={{ type: "spring", stiffness: 400 }}
+                                  >
+                                    {memoryTypeIcons[memory.type]}
+                                  </motion.div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs capitalize bg-white/80"
+                                      >
+                                        {memoryTypeLabels[memory.type] || memory.type}
+                                      </Badge>
+                                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {formatDistanceToNow(
+                                          new Date(memory.timestamp),
+                                          { addSuffix: true }
+                                        )}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-gray-800 leading-relaxed mb-3">
+                                      {memory.content}
+                                    </p>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                                        <MapPin className="w-3 h-3" />
+                                        {memory.location || "Unknown location"}
+                                      </span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500">
+                                          Importance:
+                                        </span>
+                                        <div className="flex">
+                                          {[...Array(10)].map((_, i) => (
+                                            <motion.div
+                                              key={i}
+                                              className={cn(
+                                                "w-1.5 h-1.5 rounded-full mx-0.5",
+                                                i < memory.importance
+                                                  ? "bg-yellow-400"
+                                                  : "bg-gray-200"
+                                              )}
+                                              initial={{ scale: 0 }}
+                                              animate={{ scale: 1 }}
+                                              transition={{ delay: i * 0.05 }}
+                                            />
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </ScrollArea>
+              </motion.div>
+            </div>
+          </motion.div>
         </SheetContent>
       </Sheet>
     );

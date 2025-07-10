@@ -22,93 +22,102 @@ application.get("/api/zones", (req, res) => {
   const zones = [
     {
       id: "bookstore",
-      name: "Bookstore",
-      description: "A cozy bookstore",
+      name: "Mystic Bookstore",
+      description: "A cozy bookstore filled with ancient wisdom",
       type: "commercial",
-      x: 1,
-      y: 1,
+      x: 0,
+      y: 0,
       capacity: 3,
     },
     {
       id: "town-hall",
-      name: "Town Hall",
-      description: "Administrative center",
+      name: "Grand Town Hall",
+      description: "The heart of civic life and governance",
       type: "civic",
-      x: 2,
-      y: 1,
+      x: 1,
+      y: 0,
       capacity: 5,
     },
     {
+      id: "school",
+      name: "Harmony Elementary",
+      description: "Where young minds flourish and grow",
+      type: "civic",
+      x: 2,
+      y: 0,
+      capacity: 8,
+    },
+    {
+      id: "residential-1",
+      name: "Oak Street",
+      description: "Peaceful residential area with tree-lined streets",
+      type: "residential",
+      x: 0,
+      y: 1,
+      capacity: 2,
+    },
+    {
+      id: "cafe",
+      name: "Serenity Café",
+      description: "Popular meeting spot with artisan coffee",
+      type: "commercial",
+      x: 1,
+      y: 1,
+      capacity: 4,
+    },
+    {
+      id: "residential-2",
+      name: "Maple Avenue",
+      description: "Charming family neighborhood",
+      type: "residential",
+      x: 2,
+      y: 1,
+      capacity: 2,
+    },
+    {
       id: "park",
-      name: "Central Park",
-      description: "Green space for relaxation",
+      name: "Tranquil Gardens",
+      description: "Lush green space perfect for reflection",
       type: "park",
       x: 0,
       y: 2,
       capacity: 6,
     },
     {
-      id: "cafe",
-      name: "Town Café",
-      description: "Popular meeting spot",
-      type: "commercial",
+      id: "library",
+      name: "Wisdom Library",
+      description: "Repository of knowledge and quiet study",
+      type: "civic",
       x: 1,
       y: 2,
-      capacity: 4,
-    },
-    {
-      id: "library",
-      name: "Library",
-      description: "Quiet study space",
-      type: "civic",
-      x: 2,
-      y: 2,
-      capacity: 8,
+      capacity: 5,
     },
     {
       id: "market",
-      name: "Market Square",
-      description: "Bustling marketplace",
+      name: "Artisan Market",
+      description: "Vibrant marketplace with local crafts",
       type: "commercial",
-      x: 0,
-      y: 0,
-      capacity: 10,
-    },
-    {
-      id: "residential-1",
-      name: "Oak Street",
-      description: "Quiet residential area",
-      type: "residential",
-      x: 0,
-      y: 1,
-      capacity: 2,
-    },
-    {
-      id: "residential-2",
-      name: "Maple Avenue",
-      description: "Family neighborhood",
-      type: "residential",
       x: 2,
-      y: 0,
-      capacity: 2,
-    },
-    {
-      id: "school",
-      name: "Elementary School",
-      description: "Local school",
-      type: "civic",
-      x: 1,
-      y: 0,
-      capacity: 15,
+      y: 2,
+      capacity: 8,
     },
   ];
   res.json(zones);
 });
 
-application.get("/", (req, res) => {
-  res.send("AI Town backend is Running");
+application.get("/api/health", (req, res) => {
+  res.json({ status: "healthy", timestamp: new Date().toISOString() });
 });
 
-application.listen(3500, () =>
-  console.log("Your Backend is running on http://localhost:3500")
+application.get("/", (req, res) => {
+  res.json({ 
+    message: "AI Town World Backend",
+    version: "1.0.0",
+    status: "running"
+  });
+});
+
+const PORT = process.env.PORT || 3500;
+application.listen(PORT, () =>
+  console.log(`🚀 AI Town World Backend running on http://localhost:${PORT}`)
 );
