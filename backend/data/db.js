@@ -4,7 +4,6 @@ import logger from "../utils/logger.js";
 
 const { Pool } = pg;
 
-// Create connection pool
 const pool = new Pool({
   host: config.database.host,
   port: config.database.port,
@@ -12,12 +11,11 @@ const pool = new Pool({
   user: config.database.user,
   password: config.database.password,
   ssl: config.database.ssl,
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
-// Test database connection
 pool.on("connect", () => {
   logger.info("Connected to PostgreSQL database");
 });
@@ -27,7 +25,6 @@ pool.on("error", (err) => {
   process.exit(-1);
 });
 
-// Database query helper
 export const query = async (text, params) => {
   const start = Date.now();
   try {
@@ -41,21 +38,17 @@ export const query = async (text, params) => {
   }
 };
 
-// Get a client from the pool
 export const getClient = () => {
   return pool.connect();
 };
 
-// Close the pool
 export const closePool = async () => {
   await pool.end();
   logger.info("Database pool closed");
 };
 
-// Initialize database tables
 export const initializeDatabase = async () => {
   try {
-    // Create agents table
     await query(`
       CREATE TABLE IF NOT EXISTS agents (
         id VARCHAR(50) PRIMARY KEY,
@@ -74,7 +67,6 @@ export const initializeDatabase = async () => {
       )
     `);
 
-    // Create events table
     await query(`
       CREATE TABLE IF NOT EXISTS events (
         id SERIAL PRIMARY KEY,
@@ -89,7 +81,6 @@ export const initializeDatabase = async () => {
       )
     `);
 
-    // Create buildings table
     await query(`
       CREATE TABLE IF NOT EXISTS buildings (
         id VARCHAR(50) PRIMARY KEY,
@@ -105,7 +96,6 @@ export const initializeDatabase = async () => {
       )
     `);
 
-    // Create memories table
     await query(`
       CREATE TABLE IF NOT EXISTS memories (
         id SERIAL PRIMARY KEY,
@@ -121,7 +111,6 @@ export const initializeDatabase = async () => {
       )
     `);
 
-    // Create chat_messages table
     await query(`
       CREATE TABLE IF NOT EXISTS chat_messages (
         id SERIAL PRIMARY KEY,
@@ -134,7 +123,6 @@ export const initializeDatabase = async () => {
       )
     `);
 
-    // Create world_state table
     await query(`
       CREATE TABLE IF NOT EXISTS world_state (
         id INTEGER PRIMARY KEY DEFAULT 1,
@@ -148,14 +136,12 @@ export const initializeDatabase = async () => {
       )
     `);
 
-    // Insert default world state if not exists
     await query(`
       INSERT INTO world_state (id, current_time, day, hour, minute, speed, is_running)
       VALUES (1, CURRENT_TIMESTAMP, 1, 10, 30, 'normal', true)
       ON CONFLICT (id) DO NOTHING
     `);
 
-    // Create indexes for better performance
     await query(`
       CREATE INDEX IF NOT EXISTS idx_events_agent_id ON events(agent_id);
       CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);

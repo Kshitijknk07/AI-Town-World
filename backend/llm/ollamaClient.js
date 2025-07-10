@@ -11,7 +11,6 @@ class OllamaClient {
     this.timeout = config.llm.timeout;
   }
 
-  // Generate text using Ollama
   async generate(prompt, options = {}) {
     const {
       temperature = this.temperature,
@@ -34,7 +33,6 @@ class OllamaClient {
         },
       };
 
-      // Add system prompt if provided
       if (systemPrompt) {
         requestBody.system = systemPrompt;
       }
@@ -84,7 +82,6 @@ class OllamaClient {
     }
   }
 
-  // Generate agent thought
   async generateThought(agent, context) {
     const systemPrompt = `You are ${
       agent.name
@@ -111,7 +108,6 @@ Based on this context, what are you thinking about right now?`;
     return result.text.trim();
   }
 
-  // Generate agent action
   async generateAction(agent, context, availableActions) {
     const systemPrompt = `You are ${
       agent.name
@@ -140,7 +136,6 @@ What action do you want to take? Choose from: ${availableActions.join(", ")}`;
     return result.text.trim();
   }
 
-  // Generate dialogue response
   async generateDialogue(agent, message, context) {
     const systemPrompt = `You are ${
       agent.name
@@ -169,7 +164,6 @@ How do you respond?`;
     return result.text.trim();
   }
 
-  // Generate memory reflection
   async generateMemoryReflection(agent, memory, context) {
     const systemPrompt = `You are ${
       agent.name
@@ -194,7 +188,6 @@ How do you feel about this memory?`;
     return result.text.trim();
   }
 
-  // Check if Ollama is available
   async healthCheck() {
     try {
       const response = await fetch(`${this.baseUrl}/api/tags`, {
@@ -223,7 +216,6 @@ How do you feel about this memory?`;
     }
   }
 
-  // List available models
   async listModels() {
     try {
       const response = await fetch(`${this.baseUrl}/api/tags`, {

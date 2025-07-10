@@ -2,7 +2,6 @@ import { query } from "./db.js";
 import { v4 as uuidv4 } from "uuid";
 import logger from "../utils/logger.js";
 
-// Sample agents data
 const sampleAgents = [
   {
     id: uuidv4(),
@@ -140,7 +139,6 @@ const sampleAgents = [
   },
 ];
 
-// Sample buildings data
 const sampleBuildings = [
   {
     id: "cafe",
@@ -189,7 +187,6 @@ const sampleBuildings = [
   },
 ];
 
-// Sample events data
 const sampleEvents = [
   {
     agent_id: sampleAgents[0].id,
@@ -217,12 +214,10 @@ const sampleEvents = [
   },
 ];
 
-// Seed function
 async function seedDatabase() {
   try {
     logger.info("Starting database seeding...");
 
-    // Clear existing data
     await query("DELETE FROM events");
     await query("DELETE FROM memories");
     await query("DELETE FROM chat_messages");
@@ -231,7 +226,6 @@ async function seedDatabase() {
 
     logger.info("Cleared existing data");
 
-    // Insert sample agents
     for (const agent of sampleAgents) {
       await query(
         `INSERT INTO agents (id, name, personality, current_location, current_goal, current_thought, 
@@ -256,7 +250,6 @@ async function seedDatabase() {
     }
     logger.info(`Inserted ${sampleAgents.length} agents`);
 
-    // Insert sample buildings
     for (const building of sampleBuildings) {
       await query(
         `INSERT INTO buildings (id, name, type, position_x, position_y, capacity, description, icon, current_occupants, created_at) 
@@ -277,7 +270,6 @@ async function seedDatabase() {
     }
     logger.info(`Inserted ${sampleBuildings.length} buildings`);
 
-    // Insert sample events
     for (const event of sampleEvents) {
       await query(
         `INSERT INTO events (agent_id, agent_name, type, description, location, importance, timestamp) 
@@ -295,7 +287,6 @@ async function seedDatabase() {
     }
     logger.info(`Inserted ${sampleEvents.length} events`);
 
-    // Insert sample memories for each agent
     for (const agent of sampleAgents) {
       const memories = [
         {
@@ -331,7 +322,6 @@ async function seedDatabase() {
     }
     logger.info(`Inserted sample memories for ${sampleAgents.length} agents`);
 
-    // Insert sample chat messages
     const chatMessages = [
       {
         agent_id: sampleAgents[0].id,
@@ -364,7 +354,6 @@ async function seedDatabase() {
 
     logger.info("Database seeding completed successfully!");
 
-    // Log summary
     const agentCount = await query("SELECT COUNT(*) as count FROM agents");
     const buildingCount = await query(
       "SELECT COUNT(*) as count FROM buildings"
@@ -384,7 +373,6 @@ async function seedDatabase() {
   }
 }
 
-// Run seeding if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   seedDatabase()
     .then(() => {

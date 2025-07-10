@@ -9,11 +9,9 @@ class EmbeddingClient {
     this.similarityThreshold = config.vector.similarityThreshold;
     this.maxResults = config.vector.maxResults;
 
-    // In-memory vector store (in production, use a proper vector DB like pgvector)
-    this.embeddings = new Map(); // agentId -> [embeddings]
+    this.embeddings = new Map();
   }
 
-  // Generate embedding using Ollama
   async generateEmbedding(text) {
     try {
       const response = await fetch(`${this.baseUrl}/api/embeddings`, {
@@ -40,17 +38,14 @@ class EmbeddingClient {
         text: text.substring(0, 100),
       });
 
-      // Fallback: generate a simple hash-based embedding
       return this.generateFallbackEmbedding(text);
     }
   }
 
-  // Fallback embedding generation (simple hash-based)
   generateFallbackEmbedding(text) {
     const hash = this.simpleHash(text);
     const embedding = new Array(this.dimension).fill(0);
 
-    // Use hash to generate pseudo-random embedding
     for (let i = 0; i < this.dimension; i++) {
       embedding[i] = Math.sin(hash + i) * 0.5;
     }
@@ -58,18 +53,16 @@ class EmbeddingClient {
     return embedding;
   }
 
-  // Simple hash function
   simpleHash(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
       hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32-bit integer
+      hash = hash & hash;
     }
     return Math.abs(hash);
   }
 
-  // Calculate cosine similarity between two vectors
   cosineSimilarity(vecA, vecB) {
     if (vecA.length !== vecB.length) {
       throw new Error("Vectors must have the same dimension");
@@ -95,7 +88,6 @@ class EmbeddingClient {
     return dotProduct / (normA * normB);
   }
 
-  // Store memory with embedding
   async storeMemory(agentId, memory) {
     try {
       const embedding = await this.generateEmbedding(memory.content);
@@ -133,7 +125,6 @@ class EmbeddingClient {
     }
   }
 
-  // Search for similar memories
   async searchMemories(agentId, query, limit = this.maxResults) {
     try {
       if (!this.embeddings.has(agentId)) {
@@ -143,13 +134,11 @@ class EmbeddingClient {
       const queryEmbedding = await this.generateEmbedding(query);
       const agentMemories = this.embeddings.get(agentId);
 
-      // Calculate similarities
       const similarities = agentMemories.map((memory) => ({
         memory,
         similarity: this.cosineSimilarity(queryEmbedding, memory.embedding),
       }));
 
-      // Filter by threshold and sort by similarity
       const filtered = similarities
         .filter((item) => item.similarity >= this.similarityThreshold)
         .sort((a, b) => b.similarity - a.similarity)
@@ -177,7 +166,6 @@ class EmbeddingClient {
     }
   }
 
-  // Get recent memories (without similarity search)
   getRecentMemories(agentId, limit = this.maxResults) {
     if (!this.embeddings.has(agentId)) {
       return [];
@@ -198,7 +186,6 @@ class EmbeddingClient {
       }));
   }
 
-  // Remove old memories (cleanup)
   cleanupOldMemories(agentId, daysOld = config.simulation.memoryRetentionDays) {
     if (!this.embeddings.has(agentId)) {
       return;
@@ -221,7 +208,6 @@ class EmbeddingClient {
     });
   }
 
-  // Get memory statistics
   getMemoryStats(agentId) {
     if (!this.embeddings.has(agentId)) {
       return { total: 0, byType: {} };
@@ -239,7 +225,6 @@ class EmbeddingClient {
     };
   }
 
-  // Health check
   async healthCheck() {
     try {
       const testEmbedding = await this.generateEmbedding("test");

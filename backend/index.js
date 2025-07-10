@@ -18,31 +18,23 @@ class AITownServer {
     this.isInitialized = false;
   }
 
-  // Initialize the server
   async initialize() {
     try {
       logger.info("Initializing AI Town Server...");
 
-      // Initialize database
       await initializeDatabase();
       logger.info("Database initialized");
 
-      // Setup middleware
       this.setupMiddleware();
 
-      // Setup routes
       this.setupRoutes();
 
-      // Setup error handling
       this.setupErrorHandling();
 
-      // Create HTTP server
       this.server = http.createServer(this.app);
 
-      // Initialize WebSocket handler
       socketHandler.initialize(this.server);
 
-      // Initialize simulation loop
       await simulationLoop.initialize();
       logger.info("Simulation loop initialized");
 
@@ -56,9 +48,7 @@ class AITownServer {
     }
   }
 
-  // Setup Express middleware
   setupMiddleware() {
-    // Security middleware
     this.app.use(
       helmet({
         contentSecurityPolicy: {
@@ -72,26 +62,20 @@ class AITownServer {
       })
     );
 
-    // CORS middleware
     this.app.use(cors(config.cors));
 
-    // Request logging
     this.app.use(morgan("combined"));
     this.app.use(requestLogger);
 
-    // Body parsing middleware
     this.app.use(express.json({ limit: "10mb" }));
     this.app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-    // Static files (if needed)
     this.app.use("/static", express.static("public"));
 
     logger.info("Middleware setup completed");
   }
 
-  // Setup API routes
   setupRoutes() {
-    // Health check endpoint
     this.app.get("/health", (req, res) => {
       res.json({
         status: "healthy",
@@ -101,10 +85,8 @@ class AITownServer {
       });
     });
 
-    // API routes
     this.app.use("/api", routes);
 
-    // 404 handler
     this.app.use("*", (req, res) => {
       res.status(404).json({
         error: "Endpoint not found",
@@ -116,17 +98,13 @@ class AITownServer {
     logger.info("Routes setup completed");
   }
 
-  // Setup error handling
   setupErrorHandling() {
-    // Global error handler
     this.app.use(errorLogger);
 
-    // Handle unhandled promise rejections
     process.on("unhandledRejection", (reason, promise) => {
       logger.error("Unhandled Rejection at:", { promise, reason });
     });
 
-    // Handle uncaught exceptions
     process.on("uncaughtException", (error) => {
       logger.error("Uncaught Exception:", {
         error: error.message,
@@ -135,7 +113,6 @@ class AITownServer {
       this.shutdown();
     });
 
-    // Handle graceful shutdown
     process.on("SIGTERM", () => {
       logger.info("SIGTERM received, shutting down gracefully");
       this.shutdown();
@@ -149,7 +126,6 @@ class AITownServer {
     logger.info("Error handling setup completed");
   }
 
-  // Start the server
   async start() {
     if (!this.isInitialized) {
       throw new Error("Server not initialized. Call initialize() first.");
@@ -167,7 +143,6 @@ class AITownServer {
           nodeVersion: process.version,
         });
 
-        // Start simulation loop
         simulationLoop.start();
         logger.info("Simulation loop started");
       });
@@ -177,16 +152,13 @@ class AITownServer {
     }
   }
 
-  // Stop the server
   async stop() {
     try {
       logger.info("Stopping AI Town Server...");
 
-      // Stop simulation loop
       simulationLoop.stop();
       logger.info("Simulation loop stopped");
 
-      // Close server
       if (this.server) {
         await new Promise((resolve) => {
           this.server.close(resolve);
@@ -194,10 +166,8 @@ class AITownServer {
         logger.info("HTTP server closed");
       }
 
-      // Cleanup WebSocket handler
       socketHandler.cleanup();
 
-      // Cleanup simulation loop
       simulationLoop.cleanup();
 
       logger.info("AI Town Server stopped successfully");
@@ -206,7 +176,6 @@ class AITownServer {
     }
   }
 
-  // Graceful shutdown
   async shutdown() {
     try {
       logger.info("Shutting down AI Town Server...");
@@ -218,7 +187,6 @@ class AITownServer {
     }
   }
 
-  // Get server status
   getStatus() {
     return {
       isInitialized: this.isInitialized,
@@ -231,10 +199,8 @@ class AITownServer {
   }
 }
 
-// Create and start server
 const server = new AITownServer();
 
-// Initialize and start server
 async function startServer() {
   try {
     await server.initialize();
@@ -245,7 +211,6 @@ async function startServer() {
   }
 }
 
-// Start the server if this file is run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   startServer();
 }

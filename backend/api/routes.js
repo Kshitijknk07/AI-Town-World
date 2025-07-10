@@ -10,9 +10,6 @@ import logger from "../utils/logger.js";
 
 const router = express.Router();
 
-// ===== AGENT ROUTES =====
-
-// Get all agents
 router.get("/agents", async (req, res) => {
   try {
     const result = await query("SELECT * FROM agents ORDER BY created_at");
@@ -23,7 +20,6 @@ router.get("/agents", async (req, res) => {
   }
 });
 
-// Get agent by ID
 router.get("/agents/:id", async (req, res) => {
   try {
     const result = await query("SELECT * FROM agents WHERE id = $1", [
@@ -44,7 +40,6 @@ router.get("/agents/:id", async (req, res) => {
   }
 });
 
-// Create new agent
 router.post("/agents", async (req, res) => {
   try {
     const { name, personality, current_location, current_goal, avatar } =
@@ -92,7 +87,6 @@ router.post("/agents", async (req, res) => {
       ]
     );
 
-    // Add to simulation
     await simulationLoop.addAgent(agentId);
 
     logger.info("Agent created", { agentId, name });
@@ -103,7 +97,6 @@ router.post("/agents", async (req, res) => {
   }
 });
 
-// Update agent
 router.put("/agents/:id", async (req, res) => {
   try {
     const {
@@ -174,7 +167,6 @@ router.put("/agents/:id", async (req, res) => {
   }
 });
 
-// Delete agent
 router.delete("/agents/:id", async (req, res) => {
   try {
     const result = await query("DELETE FROM agents WHERE id = $1", [
@@ -185,7 +177,6 @@ router.delete("/agents/:id", async (req, res) => {
       return res.status(404).json({ error: "Agent not found" });
     }
 
-    // Remove from simulation
     await simulationLoop.removeAgent(req.params.id);
 
     logger.info("Agent deleted", { agentId: req.params.id });
@@ -199,7 +190,6 @@ router.delete("/agents/:id", async (req, res) => {
   }
 });
 
-// Trigger agent thought
 router.post("/agents/:id/thought", async (req, res) => {
   try {
     await agentThinker.think(req.params.id);
@@ -213,7 +203,6 @@ router.post("/agents/:id/thought", async (req, res) => {
   }
 });
 
-// Get agent memories
 router.get("/agents/:id/memories", async (req, res) => {
   try {
     const { limit = 10, search } = req.query;
@@ -242,9 +231,6 @@ router.get("/agents/:id/memories", async (req, res) => {
   }
 });
 
-// ===== WORLD ROUTES =====
-
-// Get world time
 router.get("/world/time", async (req, res) => {
   try {
     const timeState = worldTime.getCurrentTime();
@@ -255,7 +241,6 @@ router.get("/world/time", async (req, res) => {
   }
 });
 
-// Set world time speed
 router.post("/world/speed", async (req, res) => {
   try {
     const { speed } = req.body;
@@ -272,7 +257,6 @@ router.post("/world/speed", async (req, res) => {
   }
 });
 
-// Reset world time
 router.post("/world/reset", async (req, res) => {
   try {
     await worldTime.reset();
@@ -283,7 +267,6 @@ router.post("/world/reset", async (req, res) => {
   }
 });
 
-// Get buildings
 router.get("/world/buildings", async (req, res) => {
   try {
     const result = await query("SELECT * FROM buildings ORDER BY name");
@@ -294,9 +277,6 @@ router.get("/world/buildings", async (req, res) => {
   }
 });
 
-// ===== EVENT ROUTES =====
-
-// Get events
 router.get("/events", async (req, res) => {
   try {
     const { limit = 50, agent_id, location } = req.query;
@@ -331,9 +311,6 @@ router.get("/events", async (req, res) => {
   }
 });
 
-// ===== SIMULATION ROUTES =====
-
-// Get simulation status
 router.get("/simulation/status", async (req, res) => {
   try {
     const status = simulationLoop.getStatus();
@@ -344,7 +321,6 @@ router.get("/simulation/status", async (req, res) => {
   }
 });
 
-// Start simulation
 router.post("/simulation/start", async (req, res) => {
   try {
     simulationLoop.start();
@@ -355,7 +331,6 @@ router.post("/simulation/start", async (req, res) => {
   }
 });
 
-// Stop simulation
 router.post("/simulation/stop", async (req, res) => {
   try {
     simulationLoop.stop();
@@ -366,7 +341,6 @@ router.post("/simulation/stop", async (req, res) => {
   }
 });
 
-// Pause simulation
 router.post("/simulation/pause", async (req, res) => {
   try {
     await simulationLoop.pause();
@@ -377,7 +351,6 @@ router.post("/simulation/pause", async (req, res) => {
   }
 });
 
-// Resume simulation
 router.post("/simulation/resume", async (req, res) => {
   try {
     await simulationLoop.resume();
@@ -388,7 +361,6 @@ router.post("/simulation/resume", async (req, res) => {
   }
 });
 
-// Reset simulation
 router.post("/simulation/reset", async (req, res) => {
   try {
     await simulationLoop.reset();
@@ -399,7 +371,6 @@ router.post("/simulation/reset", async (req, res) => {
   }
 });
 
-// Get simulation statistics
 router.get("/simulation/stats", async (req, res) => {
   try {
     const stats = await simulationLoop.getStatistics();
@@ -412,9 +383,6 @@ router.get("/simulation/stats", async (req, res) => {
   }
 });
 
-// ===== LLM ROUTES =====
-
-// Get LLM health
 router.get("/llm/health", async (req, res) => {
   try {
     const health = await ollamaClient.healthCheck();
@@ -425,7 +393,6 @@ router.get("/llm/health", async (req, res) => {
   }
 });
 
-// Get available models
 router.get("/llm/models", async (req, res) => {
   try {
     const models = await ollamaClient.listModels();
@@ -436,9 +403,6 @@ router.get("/llm/models", async (req, res) => {
   }
 });
 
-// ===== CHAT ROUTES =====
-
-// Get chat messages for agent
 router.get("/agents/:id/chat", async (req, res) => {
   try {
     const { limit = 50 } = req.query;
@@ -446,7 +410,7 @@ router.get("/agents/:id/chat", async (req, res) => {
       "SELECT * FROM chat_messages WHERE agent_id = $1 ORDER BY timestamp DESC LIMIT $2",
       [req.params.id, parseInt(limit)]
     );
-    res.json(result.rows.reverse()); // Return in chronological order
+    res.json(result.rows.reverse());
   } catch (error) {
     logger.error("Failed to get chat messages", {
       agentId: req.params.id,
@@ -456,7 +420,6 @@ router.get("/agents/:id/chat", async (req, res) => {
   }
 });
 
-// Send message to agent
 router.post("/agents/:id/chat", async (req, res) => {
   try {
     const { message } = req.body;
@@ -465,7 +428,6 @@ router.post("/agents/:id/chat", async (req, res) => {
       return res.status(400).json({ error: "Message is required" });
     }
 
-    // Get agent
     const agentResult = await query("SELECT * FROM agents WHERE id = $1", [
       req.params.id,
     ]);
@@ -475,13 +437,11 @@ router.post("/agents/:id/chat", async (req, res) => {
 
     const agent = agentResult.rows[0];
 
-    // Store user message
     await query(
       "INSERT INTO chat_messages (agent_id, agent_name, content, type, timestamp) VALUES ($1, $2, $3, $4, $5)",
       [req.params.id, "User", message, "user", new Date()]
     );
 
-    // Generate agent response
     const context = `User said: "${message}"`;
     const response = await ollamaClient.generateDialogue(
       agent,
@@ -489,7 +449,6 @@ router.post("/agents/:id/chat", async (req, res) => {
       context
     );
 
-    // Store agent response
     await query(
       "INSERT INTO chat_messages (agent_id, agent_name, content, type, timestamp) VALUES ($1, $2, $3, $4, $5)",
       [req.params.id, agent.name, response, "agent", new Date()]

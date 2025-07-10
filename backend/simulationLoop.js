@@ -13,16 +13,12 @@ class SimulationLoop {
     this.lastTickTime = Date.now();
   }
 
-  // Initialize simulation
   async initialize() {
     try {
-      // Initialize world time
       await worldTime.initialize();
 
-      // Load agent IDs
       await this.loadAgents();
 
-      // Start world time simulation
       if (worldTime.isRunning) {
         worldTime.start();
       }
@@ -39,7 +35,6 @@ class SimulationLoop {
     }
   }
 
-  // Load agent IDs from database
   async loadAgents() {
     try {
       const result = await query("SELECT id FROM agents ORDER BY created_at");
@@ -54,7 +49,6 @@ class SimulationLoop {
     }
   }
 
-  // Start the simulation loop
   start() {
     if (this.isRunning) {
       logger.warn("Simulation loop already running");
@@ -64,7 +58,6 @@ class SimulationLoop {
     this.isRunning = true;
     this.lastTickTime = Date.now();
 
-    // Start simulation interval
     this.simulationInterval = setInterval(() => {
       this.tick();
     }, config.simulation.tickInterval);
@@ -75,7 +68,6 @@ class SimulationLoop {
     });
   }
 
-  // Stop the simulation loop
   stop() {
     if (!this.isRunning) {
       logger.warn("Simulation loop not running");
@@ -92,7 +84,6 @@ class SimulationLoop {
     logger.info("Simulation loop stopped");
   }
 
-  // Main simulation tick
   async tick() {
     if (!this.isRunning || !worldTime.isRunning) {
       return;
@@ -101,10 +92,8 @@ class SimulationLoop {
     try {
       const tickStart = Date.now();
 
-      // Process agents in round-robin fashion
       await this.processAgents();
 
-      // Perform periodic maintenance
       await this.performMaintenance();
 
       const tickDuration = Date.now() - tickStart;
@@ -119,13 +108,11 @@ class SimulationLoop {
     }
   }
 
-  // Process agents for this tick
   async processAgents() {
     if (this.agentIds.length === 0) {
       return;
     }
 
-    // Process one agent per tick to avoid overwhelming the system
     const agentId = this.agentIds[this.currentAgentIndex];
 
     try {
@@ -137,22 +124,17 @@ class SimulationLoop {
       });
     }
 
-    // Move to next agent
     this.currentAgentIndex =
       (this.currentAgentIndex + 1) % this.agentIds.length;
   }
 
-  // Perform periodic maintenance tasks
   async performMaintenance() {
     try {
-      // Clean up old memories (once per day)
       const currentDay = worldTime.day;
       if (currentDay % 1 === 0) {
-        // Every day
         await this.cleanupOldMemories();
       }
 
-      // Reload agents (every 10 ticks)
       if (this.currentAgentIndex === 0) {
         await this.loadAgents();
       }
@@ -161,7 +143,6 @@ class SimulationLoop {
     }
   }
 
-  // Clean up old memories
   async cleanupOldMemories() {
     try {
       const cutoffDate = new Date();
@@ -169,13 +150,9 @@ class SimulationLoop {
         cutoffDate.getDate() - config.simulation.memoryRetentionDays
       );
 
-      // Clean up from database
       await query("DELETE FROM memories WHERE timestamp < $1", [cutoffDate]);
 
-      // Clean up from vector store
       for (const agentId of this.agentIds) {
-        // This would be implemented in the embedding client
-        // embeddingClient.cleanupOldMemories(agentId);
       }
 
       logger.info("Cleaned up old memories", { cutoffDate });
@@ -184,7 +161,6 @@ class SimulationLoop {
     }
   }
 
-  // Add new agent to simulation
   async addAgent(agentId) {
     if (!this.agentIds.includes(agentId)) {
       this.agentIds.push(agentId);
@@ -192,13 +168,11 @@ class SimulationLoop {
     }
   }
 
-  // Remove agent from simulation
   async removeAgent(agentId) {
     const index = this.agentIds.indexOf(agentId);
     if (index > -1) {
       this.agentIds.splice(index, 1);
 
-      // Adjust current index if needed
       if (this.currentAgentIndex >= this.agentIds.length) {
         this.currentAgentIndex = 0;
       }
@@ -207,7 +181,6 @@ class SimulationLoop {
     }
   }
 
-  // Get simulation status
   getStatus() {
     return {
       isRunning: this.isRunning,
@@ -219,21 +192,18 @@ class SimulationLoop {
     };
   }
 
-  // Pause simulation
   async pause() {
     this.stop();
     worldTime.stop();
     logger.info("Simulation paused");
   }
 
-  // Resume simulation
   async resume() {
     this.start();
     worldTime.start();
     logger.info("Simulation resumed");
   }
 
-  // Reset simulation
   async reset() {
     this.stop();
     await worldTime.reset();
@@ -242,13 +212,11 @@ class SimulationLoop {
     logger.info("Simulation reset");
   }
 
-  // Set simulation speed
   async setSpeed(speed) {
     await worldTime.setSpeed(speed);
     logger.info("Simulation speed changed", { speed });
   }
 
-  // Get simulation statistics
   async getStatistics() {
     try {
       const stats = {
@@ -258,11 +226,9 @@ class SimulationLoop {
         worldTime: worldTime.getFormattedTime(),
       };
 
-      // Get event count
       const eventResult = await query("SELECT COUNT(*) as count FROM events");
       stats.events = parseInt(eventResult.rows[0].count);
 
-      // Get memory count
       const memoryResult = await query(
         "SELECT COUNT(*) as count FROM memories"
       );
@@ -277,7 +243,6 @@ class SimulationLoop {
     }
   }
 
-  // Cleanup resources
   cleanup() {
     this.stop();
     worldTime.cleanup();

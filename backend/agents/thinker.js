@@ -6,10 +6,9 @@ import logger from "../utils/logger.js";
 
 class AgentThinker {
   constructor() {
-    this.thinkingAgents = new Set(); // Prevent concurrent thinking for same agent
+    this.thinkingAgents = new Set();
   }
 
-  // Main agent thinking loop
   async think(agentId) {
     if (this.thinkingAgents.has(agentId)) {
       logger.debug("Agent already thinking", { agentId });
@@ -19,38 +18,30 @@ class AgentThinker {
     this.thinkingAgents.add(agentId);
 
     try {
-      // Get agent data
       const agent = await this.getAgent(agentId);
       if (!agent) {
         throw new Error(`Agent not found: ${agentId}`);
       }
 
-      // Get context (recent events, other agents nearby, etc.)
       const context = await this.buildContext(agent);
 
-      // Generate new thought
       const newThought = await this.generateThought(agent, context);
 
-      // Decide on action
       const action = await this.decideAction(agent, context);
 
-      // Execute action
       await this.executeAction(agent, action);
 
-      // Update agent state
       await this.updateAgentState(agentId, {
         current_thought: newThought,
         updated_at: new Date(),
       });
 
-      // Store memory of this thinking cycle
       await this.storeMemory(agentId, {
         content: `Thought: ${newThought}. Action: ${action.description}`,
         type: "thought",
         emotionalImpact: action.emotionalImpact || 0,
       });
 
-      // Log event
       await this.logEvent(
         agentId,
         agent.name,
@@ -72,13 +63,11 @@ class AgentThinker {
     }
   }
 
-  // Get agent from database
   async getAgent(agentId) {
     const result = await query("SELECT * FROM agents WHERE id = $1", [agentId]);
     return result.rows[0];
   }
 
-  // Build context for agent thinking
   async buildContext(agent) {
     const context = {
       currentTime: await this.getCurrentTime(),
@@ -92,7 +81,6 @@ class AgentThinker {
     return context;
   }
 
-  // Generate agent thought using LLM
   async generateThought(agent, context) {
     const contextString = this.formatContext(context);
 
@@ -108,7 +96,6 @@ class AgentThinker {
     }
   }
 
-  // Fallback thought generation
   generateFallbackThought(agent, context) {
     const thoughts = [
       `I'm at ${context.location} and feeling ${this.getMoodDescription(
@@ -125,7 +112,6 @@ class AgentThinker {
     return thoughts[Math.floor(Math.random() * thoughts.length)];
   }
 
-  // Decide on action
   async decideAction(agent, context) {
     const availableActions = this.getAvailableActions(agent, context);
 
@@ -153,21 +139,17 @@ class AgentThinker {
     }
   }
 
-  // Get available actions based on context
   getAvailableActions(agent, context) {
     const actions = ["idle", "observe", "think"];
 
-    // Add movement actions if there are other locations
     if (context.location !== "home") {
       actions.push("move_home");
     }
 
-    // Add social actions if there are nearby agents
     if (context.nearbyAgents.length > 0) {
       actions.push("greet", "converse", "observe_others");
     }
 
-    // Add goal-specific actions
     if (agent.current_goal.includes("work")) {
       actions.push("work");
     }
@@ -178,7 +160,6 @@ class AgentThinker {
     return actions;
   }
 
-  // Parse action from LLM response
   parseAction(actionName, agent, context) {
     const actionNameLower = actionName.toLowerCase();
 
@@ -242,14 +223,12 @@ class AgentThinker {
     };
   }
 
-  // Generate fallback action
   generateFallbackAction(agent, context, availableActions) {
     const action =
       availableActions[Math.floor(Math.random() * availableActions.length)];
     return this.parseAction(action, agent, context);
   }
 
-  // Execute the decided action
   async executeAction(agent, action) {
     switch (action.type) {
       case "move":
@@ -265,12 +244,10 @@ class AgentThinker {
         await this.performRestAction(agent);
         break;
       default:
-        // idle action - do nothing
         break;
     }
   }
 
-  // Move agent to new location
   async moveAgent(agentId, targetLocation) {
     await query(
       "UPDATE agents SET current_location = $1, updated_at = $2 WHERE id = $3",
@@ -280,10 +257,8 @@ class AgentThinker {
     logger.info("Agent moved", { agentId, targetLocation });
   }
 
-  // Perform social action
   async performSocialAction(agent, action) {
     if (action.targetAgent) {
-      // Update relationship
       const currentRelationships = agent.relationships || {};
       const currentRelationship = currentRelationships[action.targetAgent] || 0;
       const newRelationship = Math.min(1, currentRelationship + 0.1);
@@ -300,9 +275,7 @@ class AgentThinker {
     }
   }
 
-  // Perform work action
   async performWorkAction(agent) {
-    // Decrease energy
     const newEnergy = Math.max(0, agent.energy - 5);
     await query(
       "UPDATE agents SET energy = $1, updated_at = $2 WHERE id = $3",
@@ -310,9 +283,7 @@ class AgentThinker {
     );
   }
 
-  // Perform rest action
   async performRestAction(agent) {
-    // Increase energy
     const newEnergy = Math.min(100, agent.energy + 10);
     await query(
       "UPDATE agents SET energy = $1, updated_at = $2 WHERE id = $3",
@@ -320,7 +291,6 @@ class AgentThinker {
     );
   }
 
-  // Update agent state
   async updateAgentState(agentId, updates) {
     const setClause = Object.keys(updates)
       .map((key, index) => `${key} = $${index + 2}`)
@@ -330,7 +300,6 @@ class AgentThinker {
     await query(`UPDATE agents SET ${setClause} WHERE id = $1`, values);
   }
 
-  // Store memory
   async storeMemory(agentId, memory) {
     const memoryId = uuidv4();
     const memoryData = {
@@ -343,7 +312,6 @@ class AgentThinker {
       timestamp: new Date(),
     };
 
-    // Store in database
     await query(
       "INSERT INTO memories (id, agent_id, content, type, related_agent, location, emotional_impact, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
       [
@@ -358,11 +326,9 @@ class AgentThinker {
       ]
     );
 
-    // Store with embedding
     await embeddingClient.storeMemory(agentId, memoryData);
   }
 
-  // Log event
   async logEvent(agentId, agentName, type, description, location) {
     await query(
       "INSERT INTO events (agent_id, agent_name, type, description, location, timestamp) VALUES ($1, $2, $3, $4, $5, $6)",
@@ -370,7 +336,6 @@ class AgentThinker {
     );
   }
 
-  // Helper methods
   async getCurrentTime() {
     const result = await query("SELECT * FROM world_state WHERE id = 1");
     return result.rows[0];

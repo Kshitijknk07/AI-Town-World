@@ -13,7 +13,6 @@ class WorldTime {
     this.tickInterval = null;
   }
 
-  // Initialize world time from database
   async initialize() {
     try {
       const result = await query("SELECT * FROM world_state WHERE id = 1");
@@ -39,7 +38,6 @@ class WorldTime {
     }
   }
 
-  // Start the time simulation
   start() {
     if (this.tickInterval) {
       clearInterval(this.tickInterval);
@@ -56,7 +54,6 @@ class WorldTime {
     });
   }
 
-  // Stop the time simulation
   stop() {
     if (this.tickInterval) {
       clearInterval(this.tickInterval);
@@ -67,18 +64,14 @@ class WorldTime {
     logger.info("World time simulation stopped");
   }
 
-  // Advance time by one tick
   async tick() {
     if (!this.isRunning) return;
 
     try {
-      // Calculate time advancement based on speed
       const timeAdvancement = this.getTimeAdvancement();
 
-      // Advance time
       this.advanceTime(timeAdvancement);
 
-      // Update database
       await this.updateDatabase();
 
       logger.debug("World time tick", {
@@ -91,9 +84,8 @@ class WorldTime {
     }
   }
 
-  // Get time advancement based on current speed
   getTimeAdvancement() {
-    const baseAdvancement = config.simulation.timeScale; // minutes per tick
+    const baseAdvancement = config.simulation.timeScale;
 
     switch (this.speed) {
       case "pause":
@@ -109,18 +101,14 @@ class WorldTime {
     }
   }
 
-  // Advance time by specified minutes
   advanceTime(minutes) {
     if (minutes <= 0) return;
 
-    // Add minutes to current time
     this.currentTime.setMinutes(this.currentTime.getMinutes() + minutes);
 
-    // Update hour and minute
     this.hour = this.currentTime.getHours();
     this.minute = this.currentTime.getMinutes();
 
-    // Check if day has passed
     const previousDay = this.day;
     this.day =
       Math.floor(this.currentTime.getTime() / (24 * 60 * 60 * 1000)) + 1;
@@ -130,7 +118,6 @@ class WorldTime {
     }
   }
 
-  // Update database with current time state
   async updateDatabase() {
     try {
       await query(
@@ -154,7 +141,6 @@ class WorldTime {
     }
   }
 
-  // Set simulation speed
   async setSpeed(speed) {
     if (!["pause", "slow", "normal", "fast"].includes(speed)) {
       throw new Error("Invalid speed value");
@@ -162,10 +148,8 @@ class WorldTime {
 
     this.speed = speed;
 
-    // Update running state based on speed
     this.isRunning = speed !== "pause";
 
-    // Restart simulation if needed
     if (this.isRunning && !this.tickInterval) {
       this.start();
     } else if (!this.isRunning && this.tickInterval) {
@@ -180,7 +164,6 @@ class WorldTime {
     });
   }
 
-  // Get current time state
   getCurrentTime() {
     return {
       currentTime: this.currentTime,
@@ -192,7 +175,6 @@ class WorldTime {
     };
   }
 
-  // Get formatted time string
   getFormattedTime() {
     return {
       time: `${this.hour}:${this.minute.toString().padStart(2, "0")}`,
@@ -202,42 +184,34 @@ class WorldTime {
     };
   }
 
-  // Check if it's a specific time of day
   isTimeOfDay(startHour, endHour) {
     return this.hour >= startHour && this.hour < endHour;
   }
 
-  // Check if it's daytime (6 AM to 6 PM)
   isDaytime() {
     return this.isTimeOfDay(6, 18);
   }
 
-  // Check if it's nighttime (6 PM to 6 AM)
   isNighttime() {
     return !this.isDaytime();
   }
 
-  // Check if it's morning (6 AM to 12 PM)
   isMorning() {
     return this.isTimeOfDay(6, 12);
   }
 
-  // Check if it's afternoon (12 PM to 6 PM)
   isAfternoon() {
     return this.isTimeOfDay(12, 18);
   }
 
-  // Check if it's evening (6 PM to 12 AM)
   isEvening() {
     return this.isTimeOfDay(18, 24);
   }
 
-  // Check if it's late night (12 AM to 6 AM)
   isLateNight() {
     return this.hour >= 0 && this.hour < 6;
   }
 
-  // Get time of day description
   getTimeOfDayDescription() {
     if (this.isMorning()) return "morning";
     if (this.isAfternoon()) return "afternoon";
@@ -246,7 +220,6 @@ class WorldTime {
     return "night";
   }
 
-  // Get time context for agents
   getTimeContext() {
     return {
       time: this.getFormattedTime(),
@@ -257,10 +230,9 @@ class WorldTime {
     };
   }
 
-  // Reset time to default
   async reset() {
     this.currentTime = new Date();
-    this.currentTime.setHours(10, 30, 0, 0); // 10:30 AM
+    this.currentTime.setHours(10, 30, 0, 0);
     this.day = 1;
     this.hour = 10;
     this.minute = 30;
@@ -269,13 +241,11 @@ class WorldTime {
 
     await this.updateDatabase();
 
-    // Restart simulation
     this.start();
 
     logger.info("World time reset to default");
   }
 
-  // Cleanup
   cleanup() {
     if (this.tickInterval) {
       clearInterval(this.tickInterval);
