@@ -24,7 +24,7 @@ export default function Home() {
           <div
             className={cn(
               "flex-1 h-full transition-all duration-300 ease-in-out p-4",
-              selectedAgentId ? "mr-[400px]" : "mr-0"
+              selectedAgentId ? "mr-0 md:mr-[400px]" : "mr-0"
             )}
           >
             <TownMap />
@@ -33,11 +33,12 @@ export default function Home() {
           {/* Sliding Agent Detail Panel */}
           <div
             className={cn(
-              "absolute top-0 right-0 bottom-0 w-[400px] border-l bg-background shadow-xl transition-transform duration-300 ease-in-out z-20",
+              "absolute top-0 right-0 bottom-0 border-l bg-background shadow-xl transition-transform duration-300 ease-in-out z-20",
+              "w-full md:w-[400px]", // Full width on mobile, fixed on desktop
               selectedAgentId ? "translate-x-0" : "translate-x-full"
             )}
           >
-            <div className="h-full p-4">
+            <div className="h-full">
               <AgentDetailPanel />
             </div>
           </div>

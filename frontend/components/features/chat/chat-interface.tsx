@@ -113,7 +113,7 @@ export function ChatInterface({ agent }: ChatInterfaceProps) {
       </ScrollArea>
 
       {/* Input Area */}
-      <div className="p-4 border-t bg-background/50 backdrop-blur-sm">
+      <div className="p-4 border-t bg-background/50 backdrop-blur-sm pb-safe">
         <form
           onSubmit={(e) => {
             e.preventDefault();
