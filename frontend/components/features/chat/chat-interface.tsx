@@ -21,7 +21,7 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ agent }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<Message[]>(() => [
     {
       id: "1",
       sender: "agent",
